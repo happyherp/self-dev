@@ -20,7 +20,7 @@ def create_test_issue(number=1, title="Test Issue", body="Test body"):
         labels=["bug"],
         state="open",
         html_url=f"https://github.com/test/repo/issues/{number}",
-        repository="test/repo"
+        repository="test/repo",
     )
 
 
@@ -30,7 +30,7 @@ class TestCLI:
     def test_cli_help(self):
         """Test CLI help command."""
         runner = CliRunner()
-        result = runner.invoke(main, ['--help'])
+        result = runner.invoke(main, ["--help"])
 
         assert result.exit_code == 0
         assert "SIP" in result.output
@@ -41,7 +41,7 @@ class TestCLI:
         runner = CliRunner()
 
         with patch.dict(os.environ, {}, clear=True):
-            result = runner.invoke(main, ['process-issue', '1', '--repo', 'test/repo'])
+            result = runner.invoke(main, ["process-issue", "1", "--repo", "test/repo"])
 
             assert result.exit_code != 0
             assert "GITHUB_TOKEN" in result.output or "environment variable" in result.output
@@ -51,10 +51,10 @@ class TestCLI:
         runner = CliRunner()
 
         # Missing issue number
-        result = runner.invoke(main, ['process-issue'])
+        result = runner.invoke(main, ["process-issue"])
         assert result.exit_code != 0
 
-    @patch('sip.cli.IssueProcessor')
+    @patch("sip.cli.IssueProcessor")
     def test_cli_successful_processing(self, mock_processor_class):
         """Test CLI with successful issue processing."""
         # Mock the processor
@@ -68,29 +68,21 @@ class TestCLI:
             problem_type="bug",
             suggested_approach="Fix it",
             files_to_modify=["test.py"],
-            confidence=0.8
+            confidence=0.8,
         )
-        mock_result = ProcessingResult(
-            issue=mock_issue,
-            analysis=mock_analysis,
-            pull_request=None,
-            success=True
-        )
+        mock_result = ProcessingResult(issue=mock_issue, analysis=mock_analysis, pull_request=None, success=True)
         mock_processor.process_issue.return_value = mock_result
 
         runner = CliRunner()
 
-        with patch.dict(os.environ, {
-            'GITHUB_TOKEN': 'test_token',
-            'OPENROUTER_API_KEY': 'test_key'
-        }):
-            result = runner.invoke(main, ['process-issue', '1', '--repo', 'test/repo'])
+        with patch.dict(os.environ, {"GITHUB_TOKEN": "test_token", "OPENROUTER_API_KEY": "test_key"}):
+            result = runner.invoke(main, ["process-issue", "1", "--repo", "test/repo"])
 
             assert result.exit_code == 0
             assert "✅ Successfully processed issue #1" in result.output
-            mock_processor.process_issue.assert_called_once_with('test/repo', 1)
+            mock_processor.process_issue.assert_called_once_with("test/repo", 1)
 
-    @patch('sip.cli.IssueProcessor')
+    @patch("sip.cli.IssueProcessor")
     def test_cli_failed_processing(self, mock_processor_class):
         """Test CLI with failed issue processing."""
         # Mock the processor
@@ -99,27 +91,20 @@ class TestCLI:
 
         # Mock failed result
         mock_result = ProcessingResult(
-            issue=None,
-            analysis=None,
-            pull_request=None,
-            success=False,
-            error_message="Something went wrong"
+            issue=None, analysis=None, pull_request=None, success=False, error_message="Something went wrong"
         )
         mock_processor.process_issue.return_value = mock_result
 
         runner = CliRunner()
 
-        with patch.dict(os.environ, {
-            'GITHUB_TOKEN': 'test_token',
-            'OPENROUTER_API_KEY': 'test_key'
-        }):
-            result = runner.invoke(main, ['process-issue', '1', '--repo', 'test/repo'])
+        with patch.dict(os.environ, {"GITHUB_TOKEN": "test_token", "OPENROUTER_API_KEY": "test_key"}):
+            result = runner.invoke(main, ["process-issue", "1", "--repo", "test/repo"])
 
             assert result.exit_code == 1
             assert "❌ Failed to process issue #1" in result.output
             assert "Something went wrong" in result.output
 
-    @patch('sip.cli.IssueProcessor')
+    @patch("sip.cli.IssueProcessor")
     def test_cli_exception_handling(self, mock_processor_class):
         """Test CLI handles exceptions gracefully."""
         # Mock the processor to raise an exception
@@ -129,49 +114,43 @@ class TestCLI:
 
         runner = CliRunner()
 
-        with patch.dict(os.environ, {
-            'GITHUB_TOKEN': 'test_token',
-            'OPENROUTER_API_KEY': 'test_key'
-        }):
-            result = runner.invoke(main, ['process-issue', '1', '--repo', 'test/repo'])
+        with patch.dict(os.environ, {"GITHUB_TOKEN": "test_token", "OPENROUTER_API_KEY": "test_key"}):
+            result = runner.invoke(main, ["process-issue", "1", "--repo", "test/repo"])
 
             assert result.exit_code == 1
             assert "💥 Fatal error: Unexpected error" in result.output
 
-    @patch('sip.cli.IssueProcessor')
+    @patch("sip.cli.IssueProcessor")
     def test_cli_with_custom_config(self, mock_processor_class):
         """Test CLI with custom configuration via environment variables."""
         mock_processor = Mock()
         mock_processor_class.return_value = mock_processor
 
         mock_result = ProcessingResult(
-            issue=create_test_issue(1, "Test", "Body"),
-            analysis=None,
-            pull_request=None,
-            success=True
+            issue=create_test_issue(1, "Test", "Body"), analysis=None, pull_request=None, success=True
         )
         mock_processor.process_issue.return_value = mock_result
 
         runner = CliRunner()
 
         custom_env = {
-            'GITHUB_TOKEN': 'custom_token',
-            'OPENROUTER_API_KEY': 'custom_key',
-            'DEFAULT_REPOSITORY': 'custom/repo',
-            'LLM_MODEL': 'custom/model',
-            'MAX_RETRY_ATTEMPTS': '3'
+            "GITHUB_TOKEN": "custom_token",
+            "OPENROUTER_API_KEY": "custom_key",
+            "DEFAULT_REPOSITORY": "custom/repo",
+            "LLM_MODEL": "custom/model",
+            "MAX_RETRY_ATTEMPTS": "3",
         }
 
         with patch.dict(os.environ, custom_env):
-            result = runner.invoke(main, ['process-issue', '1', '--repo', 'test/repo'])
+            result = runner.invoke(main, ["process-issue", "1", "--repo", "test/repo"])
 
             assert result.exit_code == 0
 
             # Verify the processor was created with the right config
             mock_processor_class.assert_called_once()
             config = mock_processor_class.call_args[0][0]
-            assert config.github_token == 'custom_token'
-            assert config.openrouter_api_key == 'custom_key'
-            assert config.default_repository == 'custom/repo'
-            assert config.llm_model == 'custom/model'
+            assert config.github_token == "custom_token"
+            assert config.openrouter_api_key == "custom_key"
+            assert config.default_repository == "custom/repo"
+            assert config.llm_model == "custom/model"
             assert config.max_retry_attempts == 3

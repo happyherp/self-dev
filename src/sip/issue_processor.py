@@ -83,19 +83,24 @@ class IssueProcessor:
                     break
                 else:
                     self.logger.warning(f"❌ Tests failed on attempt {attempt + 1}")
-                    previous_attempt = json.dumps({
-                        "title": pull_request.title,
-                        "body": pull_request.body,
-                        "changes": [
-                            {
-                                "file_path": change.file_path,
-                                "change_type": change.change_type,
-                                "description": change.description,
-                                "content": change.content[:500] + "..." if len(change.content) > 500 else change.content
-                            }
-                            for change in pull_request.changes
-                        ]
-                    }, indent=2)
+                    previous_attempt = json.dumps(
+                        {
+                            "title": pull_request.title,
+                            "body": pull_request.body,
+                            "changes": [
+                                {
+                                    "file_path": change.file_path,
+                                    "change_type": change.change_type,
+                                    "description": change.description,
+                                    "content": change.content[:500] + "..."
+                                    if len(change.content) > 500
+                                    else change.content,
+                                }
+                                for change in pull_request.changes
+                            ],
+                        },
+                        indent=2,
+                    )
                     test_failure = self.test_runner.format_test_failure(test_result)
 
                     if attempt == self.config.max_retry_attempts - 1:
@@ -105,9 +110,9 @@ class IssueProcessor:
                             pull_request=pull_request,
                             success=False,
                             error_message=(
-                            f"Tests failed after {self.config.max_retry_attempts} attempts. "
-                            f"Last failure: {test_failure}"
-                        ),
+                                f"Tests failed after {self.config.max_retry_attempts} attempts. "
+                                f"Last failure: {test_failure}"
+                            ),
                         )
 
             # 8. Create branch and commit changes (tests passed)
@@ -188,11 +193,11 @@ class IssueProcessor:
     def _test_solution_in_temp_repo(self, repo: str, pull_request) -> SipTestResult:
         """Test the solution in a temporary repository clone."""
 
-
         with tempfile.TemporaryDirectory() as temp_dir:
             try:
                 # Clone the repository
                 import subprocess
+
                 clone_url = f"https://github.com/{repo}.git"
                 subprocess.run(
                     ["git", "clone", clone_url, temp_dir],

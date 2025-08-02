@@ -1,17 +1,13 @@
 #!/usr/bin/env python
 """Tests for SIP."""
 
-
 from sip.config import Config
 from sip.test_runner import SipTestResult, SipTestRunner
 
 
 def test_config_creation():
     """Test config creation with defaults."""
-    config = Config(
-        github_token="test_token",
-        openrouter_api_key="test_key"
-    )
+    config = Config(github_token="test_token", openrouter_api_key="test_key")
     assert config.github_token == "test_token"
     assert config.openrouter_api_key == "test_key"
     assert config.max_retry_attempts == 5
@@ -32,12 +28,7 @@ def test_test_runner_custom_command():
 
 def test_test_result_creation():
     """Test test result creation."""
-    result = SipTestResult(
-        success=True,
-        output="All tests passed",
-        error_output="",
-        return_code=0
-    )
+    result = SipTestResult(success=True, output="All tests passed", error_output="", return_code=0)
     assert result.success is True
     assert result.output == "All tests passed"
     assert result.return_code == 0
@@ -46,12 +37,7 @@ def test_test_result_creation():
 def test_test_runner_format_failure():
     """Test test runner failure formatting."""
     runner = SipTestRunner()
-    result = SipTestResult(
-        success=False,
-        output="Test output",
-        error_output="Error details",
-        return_code=1
-    )
+    result = SipTestResult(success=False, output="Test output", error_output="Error details", return_code=1)
 
     formatted = runner.format_test_failure(result)
     assert "TESTS FAILED" in formatted

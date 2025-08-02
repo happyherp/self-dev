@@ -24,7 +24,7 @@ def create_test_issue(number=1, title="Test Issue", body="Test body"):
         labels=["bug"],
         state="open",
         html_url=f"https://github.com/test/repo/issues/{number}",
-        repository="test/repo"
+        repository="test/repo",
     )
 
 
@@ -66,10 +66,7 @@ class TestGitHubClientIntegration:
 
     def test_github_client_initialization(self):
         """Test GitHub client can be initialized."""
-        config = Config(
-            github_token="test_token",
-            openrouter_api_key="test_key"
-        )
+        config = Config(github_token="test_token", openrouter_api_key="test_key")
         client = GitHubClient(config)
         assert client.config == config
         assert "Authorization" in client.session.headers
@@ -89,7 +86,7 @@ class TestGitHubClientIntegration:
             "state": "open",
             "user": {"login": "test_user"},
             "labels": [{"name": "bug"}],
-            "html_url": "https://github.com/test/repo/issues/1"
+            "html_url": "https://github.com/test/repo/issues/1",
         }
         mock_response.raise_for_status.return_value = None
         client.session.get = Mock(return_value=mock_response)
@@ -105,10 +102,7 @@ class TestLLMClientIntegration:
 
     def test_llm_client_initialization(self):
         """Test LLM client can be initialized."""
-        config = Config(
-            github_token="test_token",
-            openrouter_api_key="test_key"
-        )
+        config = Config(github_token="test_token", openrouter_api_key="test_key")
         client = LLMClient(config)
         assert client.config == config
         assert "Authorization" in client.session.headers
@@ -122,14 +116,16 @@ class TestLLMClientIntegration:
         # Mock the session.post method
         mock_response = Mock()
         mock_response.json.return_value = {
-            "choices": [{
-                "message": {
-                    "content": (
-                        '{"summary": "Test summary", "problem_type": "bug", '
-                        '"suggested_approach": "Fix the bug", "files_to_modify": ["test.py"], "confidence": 0.8}'
-                    )
+            "choices": [
+                {
+                    "message": {
+                        "content": (
+                            '{"summary": "Test summary", "problem_type": "bug", '
+                            '"suggested_approach": "Fix the bug", "files_to_modify": ["test.py"], "confidence": 0.8}'
+                        )
+                    }
                 }
-            }]
+            ]
         }
         mock_response.raise_for_status.return_value = None
         client.session.post = Mock(return_value=mock_response)
@@ -165,12 +161,7 @@ class TestTestRunnerIntegration:
     def test_test_runner_format_failure(self):
         """Test test runner failure formatting."""
         runner = SipTestRunner()
-        result = SipTestResult(
-            success=False,
-            output="Test failed",
-            error_output="Error details",
-            return_code=1
-        )
+        result = SipTestResult(success=False, output="Test failed", error_output="Error details", return_code=1)
 
         formatted = runner.format_test_failure(result)
         assert "TESTS FAILED" in formatted
@@ -184,10 +175,7 @@ class TestIssueProcessorIntegration:
 
     def test_issue_processor_initialization(self):
         """Test issue processor can be initialized."""
-        config = Config(
-            github_token="test_token",
-            openrouter_api_key="test_key"
-        )
+        config = Config(github_token="test_token", openrouter_api_key="test_key")
         processor = IssueProcessor(config)
 
         assert processor.config == config
@@ -201,9 +189,10 @@ class TestIssueProcessorIntegration:
         processor = IssueProcessor(config)
 
         # Mock the GitHub client methods
-        with patch.object(processor.github, 'get_file_content') as mock_get_file, \
-             patch.object(processor.github, 'list_repository_files') as mock_list_files:
-
+        with (
+            patch.object(processor.github, "get_file_content") as mock_get_file,
+            patch.object(processor.github, "list_repository_files") as mock_list_files,
+        ):
             mock_get_file.side_effect = lambda repo, path: f"Content of {path}" if path == "README.md" else None
             mock_list_files.return_value = ["README.md", "src/main.py", "tests/test.py"]
 
@@ -218,7 +207,7 @@ class TestIssueProcessorIntegration:
         config = Config(github_token="test", openrouter_api_key="test")
         processor = IssueProcessor(config)
 
-        with patch.object(processor.github, 'get_file_content') as mock_get_file:
+        with patch.object(processor.github, "get_file_content") as mock_get_file:
             mock_get_file.side_effect = lambda repo, path: f"Content of {path}"
 
             files = processor._get_relevant_files("test/repo", ["file1.py", "file2.py"])
@@ -236,7 +225,7 @@ class TestEndToEndIntegration:
         config = Config(
             github_token="test_token",
             openrouter_api_key="test_key",
-            max_retry_attempts=1  # Limit retries for testing
+            max_retry_attempts=1,  # Limit retries for testing
         )
         processor = IssueProcessor(config)
 
@@ -247,7 +236,7 @@ class TestEndToEndIntegration:
             problem_type="bug",
             suggested_approach="Fix the bug by updating test.py",
             files_to_modify=["test.py"],
-            confidence=0.8
+            confidence=0.8,
         )
         mock_pull_request = PullRequest(
             title="Fix: Test Issue",
@@ -255,30 +244,25 @@ class TestEndToEndIntegration:
             branch_name="sip/issue-1-test",
             changes=[
                 CodeChange(
-                    file_path="test.py",
-                    change_type="modify",
-                    content="print('fixed')",
-                    description="Fix the bug"
+                    file_path="test.py", change_type="modify", content="print('fixed')", description="Fix the bug"
                 )
-            ]
+            ],
         )
 
-        with patch.object(processor.github, 'get_issue', return_value=mock_issue), \
-             patch.object(processor, '_get_repository_context', return_value="repo context"), \
-             patch.object(processor.llm, 'analyze_issue', return_value=mock_analysis), \
-             patch.object(processor, '_get_relevant_files', return_value={"test.py": "print('old')"}), \
-             patch.object(processor.llm, 'generate_solution', return_value=mock_pull_request), \
-             patch.object(processor, '_test_solution_in_temp_repo') as mock_test, \
-             patch.object(processor.github, 'create_branch'), \
-             patch.object(processor.github, 'commit_changes'), \
-             patch.object(processor.github, 'create_pull_request', return_value="https://github.com/test/repo/pull/1"):
-
+        with (
+            patch.object(processor.github, "get_issue", return_value=mock_issue),
+            patch.object(processor, "_get_repository_context", return_value="repo context"),
+            patch.object(processor.llm, "analyze_issue", return_value=mock_analysis),
+            patch.object(processor, "_get_relevant_files", return_value={"test.py": "print('old')"}),
+            patch.object(processor.llm, "generate_solution", return_value=mock_pull_request),
+            patch.object(processor, "_test_solution_in_temp_repo") as mock_test,
+            patch.object(processor.github, "create_branch"),
+            patch.object(processor.github, "commit_changes"),
+            patch.object(processor.github, "create_pull_request", return_value="https://github.com/test/repo/pull/1"),
+        ):
             # Mock successful test
             mock_test.return_value = SipTestResult(
-                success=True,
-                output="All tests passed",
-                error_output="",
-                return_code=0
+                success=True, output="All tests passed", error_output="", return_code=0
             )
 
             result = processor.process_issue("test/repo", 1)
@@ -290,11 +274,7 @@ class TestEndToEndIntegration:
 
     def test_workflow_with_test_failure_and_retry(self):
         """Test workflow with test failure and successful retry."""
-        config = Config(
-            github_token="test_token",
-            openrouter_api_key="test_key",
-            max_retry_attempts=2
-        )
+        config = Config(github_token="test_token", openrouter_api_key="test_key", max_retry_attempts=2)
         processor = IssueProcessor(config)
 
         mock_issue = create_test_issue(title="Test Issue", body="Fix this bug")
@@ -303,7 +283,7 @@ class TestEndToEndIntegration:
             problem_type="bug",
             suggested_approach="Fix the bug",
             files_to_modify=["test.py"],
-            confidence=0.8
+            confidence=0.8,
         )
 
         # First attempt fails, second succeeds
@@ -311,30 +291,31 @@ class TestEndToEndIntegration:
             title="Fix: Test Issue (broken)",
             body="This is broken",
             branch_name="sip/issue-1-test",
-            changes=[CodeChange("test.py", "modify", "print('broken')", "Broken fix")]
+            changes=[CodeChange("test.py", "modify", "print('broken')", "Broken fix")],
         )
 
         working_pr = PullRequest(
             title="Fix: Test Issue (working)",
             body="This works",
             branch_name="sip/issue-1-test",
-            changes=[CodeChange("test.py", "modify", "print('working')", "Working fix")]
+            changes=[CodeChange("test.py", "modify", "print('working')", "Working fix")],
         )
 
-        with patch.object(processor.github, 'get_issue', return_value=mock_issue), \
-             patch.object(processor, '_get_repository_context', return_value="repo context"), \
-             patch.object(processor.llm, 'analyze_issue', return_value=mock_analysis), \
-             patch.object(processor, '_get_relevant_files', return_value={"test.py": "print('old')"}), \
-             patch.object(processor.llm, 'generate_solution', side_effect=[failing_pr, working_pr]), \
-             patch.object(processor, '_test_solution_in_temp_repo') as mock_test, \
-             patch.object(processor.github, 'create_branch'), \
-             patch.object(processor.github, 'commit_changes'), \
-             patch.object(processor.github, 'create_pull_request', return_value="https://github.com/test/repo/pull/1"):
-
+        with (
+            patch.object(processor.github, "get_issue", return_value=mock_issue),
+            patch.object(processor, "_get_repository_context", return_value="repo context"),
+            patch.object(processor.llm, "analyze_issue", return_value=mock_analysis),
+            patch.object(processor, "_get_relevant_files", return_value={"test.py": "print('old')"}),
+            patch.object(processor.llm, "generate_solution", side_effect=[failing_pr, working_pr]),
+            patch.object(processor, "_test_solution_in_temp_repo") as mock_test,
+            patch.object(processor.github, "create_branch"),
+            patch.object(processor.github, "commit_changes"),
+            patch.object(processor.github, "create_pull_request", return_value="https://github.com/test/repo/pull/1"),
+        ):
             # First test fails, second succeeds
             mock_test.side_effect = [
                 SipTestResult(success=False, output="", error_output="Tests failed", return_code=1),
-                SipTestResult(success=True, output="All tests passed", error_output="", return_code=0)
+                SipTestResult(success=True, output="All tests passed", error_output="", return_code=0),
             ]
 
             result = processor.process_issue("test/repo", 1)
