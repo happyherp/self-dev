@@ -1,7 +1,7 @@
 """LLM client for OpenRouter integration."""
 
-import instructor
-from openai import OpenAI
+from pydantic_ai import Agent
+from pydantic_ai.models.openai import OpenAIModel
 
 from .config import Config
 from .models import AnalysisResult, GitHubIssue, PullRequest
@@ -12,24 +12,62 @@ class LLMClient:
 
     def __init__(self, config: Config):
         self.config = config
-        # Create OpenAI client configured for OpenRouter
-        openai_client = OpenAI(
-            api_key=config.openrouter_api_key,
-            base_url="https://openrouter.ai/api/v1",
-            default_headers={
-                "HTTP-Referer": "https://github.com/happyherp/self-dev",
-                "X-Title": "SIP - Self-Improving Program",
-            },
+        # Create OpenAI model configured for OpenRouter
+        import os
+
+        # Set the API key as environment variable for PydanticAI
+        os.environ["OPENROUTER_API_KEY"] = config.openrouter_api_key
+
+        self.model = OpenAIModel(
+            model_name=config.llm_model,
+            provider="openrouter",
         )
-        # Patch with instructor for structured outputs
-        self.client = instructor.from_openai(openai_client)
+
+        # Create agents for different tasks
+        self.analysis_agent = Agent(
+            model=self.model,
+            output_type=AnalysisResult,
+            system_prompt="""You are SIP (Self-Improving Program), an AI that analyzes GitHub issues.
+
+Analyze the provided GitHub issue and provide:
+1. A brief summary of the problem
+2. The type of problem (bug, feature, documentation, enhancement, or other)
+3. Your suggested approach to solve it
+4. List of files that likely need to be modified
+5. Your confidence level (0.0 to 1.0)
+
+Be precise and focused in your analysis.""",
+        )
+
+        self.solution_agent = Agent(
+            model=self.model,
+            output_type=PullRequest,
+            system_prompt="""You are SIP (Self-Improving Program). Generate complete solutions for GitHub issues.
+
+Generate a complete solution including:
+1. A descriptive pull request title
+2. A detailed pull request body explaining the changes
+3. A unique branch name (use format: sip/issue-{issue_number}-description)
+4. All necessary code changes
+
+For each code change, specify:
+- file_path: The path to the file
+- change_type: "create", "modify", or "delete"
+- content: The complete new content of the file (for create/modify)
+- description: Brief description of what this change does
+
+IMPORTANT:
+- Provide complete file content, not just diffs
+- Ensure all changes are consistent and work together
+- Follow the existing code style and patterns
+- Include proper error handling and logging
+- Add tests if appropriate""",
+        )
 
     def analyze_issue(self, issue: GitHubIssue, repository_context: str) -> AnalysisResult:
         """Analyze a GitHub issue and determine how to address it."""
 
-        prompt = f"""You are SIP (Self-Improving Program), an AI that analyzes GitHub issues and creates solutions.
-
-ISSUE TO ANALYZE:
+        prompt = f"""ISSUE TO ANALYZE:
 Title: {issue.title}
 Body: {issue.body}
 Author: {issue.author}
@@ -37,22 +75,10 @@ Labels: {", ".join(issue.labels)}
 Repository: {issue.repository}
 
 REPOSITORY CONTEXT:
-{repository_context}
+{repository_context}"""
 
-Please analyze this issue and provide:
-1. A brief summary of the problem
-2. The type of problem (bug, feature, documentation, enhancement, or other)
-3. Your suggested approach to solve it
-4. List of files that likely need to be modified
-5. Your confidence level (0.0 to 1.0)"""
-
-        return self.client.chat.completions.create(
-            model=self.config.llm_model,
-            response_model=AnalysisResult,
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.1,
-            max_tokens=4000,
-        )
+        result = self.analysis_agent.run_sync(prompt)
+        return result.data
 
     def generate_solution(
         self,
@@ -81,11 +107,10 @@ TEST FAILURE:
 Please fix the issues and provide a corrected solution.
 """
 
-        prompt = f"""You are SIP (Self-Improving Program). Generate a complete solution for this GitHub issue.
-
-ISSUE:
+        prompt = f"""ISSUE:
 Title: {issue.title}
 Body: {issue.body}
+Issue Number: {issue.number}
 
 ANALYSIS:
 {analysis.suggested_approach}
@@ -93,31 +118,7 @@ ANALYSIS:
 CURRENT FILES:
 {files_context}
 
-{retry_context}
+{retry_context}"""
 
-Generate a complete solution including:
-1. A descriptive pull request title
-2. A detailed pull request body explaining the changes
-3. A unique branch name (use format: sip/issue-{issue.number}-description)
-4. All necessary code changes
-
-For each code change, specify:
-- file_path: The path to the file
-- change_type: "create", "modify", or "delete"
-- content: The complete new content of the file (for create/modify)
-- description: Brief description of what this change does
-
-IMPORTANT:
-- Provide complete file content, not just diffs
-- Ensure all changes are consistent and work together
-- Follow the existing code style and patterns
-- Include proper error handling and logging
-- Add tests if appropriate"""
-
-        return self.client.chat.completions.create(
-            model=self.config.llm_model,
-            response_model=PullRequest,
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.1,
-            max_tokens=8000,
-        )
+        result = self.solution_agent.run_sync(prompt)
+        return result.data

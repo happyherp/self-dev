@@ -105,14 +105,16 @@ class TestLLMClientIntegration:
         config = Config(github_token="test_token", openrouter_api_key="test_key")
         client = LLMClient(config)
         assert client.config == config
-        assert client.client is not None
+        assert client.model is not None
+        assert client.analysis_agent is not None
+        assert client.solution_agent is not None
 
     def test_llm_client_analyze_issue(self):
         """Test LLM client can analyze issues."""
         config = Config(github_token="test", openrouter_api_key="test")
         client = LLMClient(config)
 
-        # Mock the instructor client
+        # Mock the PydanticAI agent
         mock_analysis = AnalysisResult(
             summary="Test summary",
             problem_type="bug",
@@ -120,7 +122,13 @@ class TestLLMClientIntegration:
             files_to_modify=["test.py"],
             confidence=0.8,
         )
-        client.client.chat.completions.create = Mock(return_value=mock_analysis)
+
+        # Mock the run_sync method to return a mock result
+        from unittest.mock import Mock
+
+        mock_result = Mock()
+        mock_result.data = mock_analysis
+        client.analysis_agent.run_sync = Mock(return_value=mock_result)
 
         issue = create_test_issue()
         analysis = client.analyze_issue(issue, "repo context")
