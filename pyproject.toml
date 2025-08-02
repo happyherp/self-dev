@@ -36,6 +36,7 @@ test = [
     "pytest-mock>=3.11.0",  # mocking for tests
     "ruff",  # linting
     "mypy", # type checking
+    "types-requests",  # type stubs for requests
 ]
 
 [project.urls]

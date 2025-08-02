@@ -18,11 +18,15 @@ jobs:
       - name: Install uv
         run: curl -LsSf https://astral.sh/uv/install.sh | sh
       
-      - name: Install SIP
-        run: uv pip install -e .
+      - name: Install dependencies
+        run: |
+          source $HOME/.cargo/env
+          uv sync --extra test
       
       - name: Process Issue
-        run: python -m sip process-issue ${{ github.event.issue.number }}
+        run: |
+          source $HOME/.cargo/env
+          uv run python -m sip process-issue ${{ github.event.issue.number }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
