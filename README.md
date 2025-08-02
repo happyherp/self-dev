@@ -80,6 +80,7 @@ make pre-commit-run
 - [Installation Guide](docs/installation.md)
 - [GitHub Token Setup](docs/github-token-setup.md) - **Required for GitHub integration**
 - [Usage Instructions](docs/usage.md)
+- [Pre-commit Hooks](docs/pre-commit.md)
 - [Project Overview](PROJECT.md)
 - [Original Idea](idea.md)
 
