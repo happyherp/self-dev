@@ -69,15 +69,15 @@ class TestGitHubClientIntegration:
         config = Config(github_token="test_token", openrouter_api_key="test_key")
         client = GitHubClient(config)
         assert client.config == config
-        assert "Authorization" in client.session.headers
-        assert client.session.headers["Authorization"] == "token test_token"
+        assert "Authorization" in client.client.headers
+        assert client.client.headers["Authorization"] == "token test_token"
 
     def test_github_client_get_issue(self):
         """Test GitHub client can fetch issues."""
         config = Config(github_token="test", openrouter_api_key="test")
         client = GitHubClient(config)
 
-        # Mock the session.get method
+        # Mock the client.get method
         mock_response = Mock()
         mock_response.json.return_value = {
             "number": 1,
@@ -89,7 +89,7 @@ class TestGitHubClientIntegration:
             "html_url": "https://github.com/test/repo/issues/1",
         }
         mock_response.raise_for_status.return_value = None
-        client.session.get = Mock(return_value=mock_response)
+        client.client.get = Mock(return_value=mock_response)
 
         issue = client.get_issue("test/repo", 1)
         assert issue.number == 1
@@ -105,30 +105,22 @@ class TestLLMClientIntegration:
         config = Config(github_token="test_token", openrouter_api_key="test_key")
         client = LLMClient(config)
         assert client.config == config
-        assert "Authorization" in client.session.headers
-        assert client.session.headers["Authorization"] == "Bearer test_key"
+        assert client.client is not None
 
     def test_llm_client_analyze_issue(self):
         """Test LLM client can analyze issues."""
         config = Config(github_token="test", openrouter_api_key="test")
         client = LLMClient(config)
 
-        # Mock the session.post method
-        mock_response = Mock()
-        mock_response.json.return_value = {
-            "choices": [
-                {
-                    "message": {
-                        "content": (
-                            '{"summary": "Test summary", "problem_type": "bug", '
-                            '"suggested_approach": "Fix the bug", "files_to_modify": ["test.py"], "confidence": 0.8}'
-                        )
-                    }
-                }
-            ]
-        }
-        mock_response.raise_for_status.return_value = None
-        client.session.post = Mock(return_value=mock_response)
+        # Mock the instructor client
+        mock_analysis = AnalysisResult(
+            summary="Test summary",
+            problem_type="bug",
+            suggested_approach="Fix the bug",
+            files_to_modify=["test.py"],
+            confidence=0.8,
+        )
+        client.client.chat.completions.create = Mock(return_value=mock_analysis)
 
         issue = create_test_issue()
         analysis = client.analyze_issue(issue, "repo context")
@@ -291,14 +283,22 @@ class TestEndToEndIntegration:
             title="Fix: Test Issue (broken)",
             body="This is broken",
             branch_name="sip/issue-1-test",
-            changes=[CodeChange("test.py", "modify", "print('broken')", "Broken fix")],
+            changes=[
+                CodeChange(
+                    file_path="test.py", change_type="modify", content="print('broken')", description="Broken fix"
+                )
+            ],
         )
 
         working_pr = PullRequest(
             title="Fix: Test Issue (working)",
             body="This works",
             branch_name="sip/issue-1-test",
-            changes=[CodeChange("test.py", "modify", "print('working')", "Working fix")],
+            changes=[
+                CodeChange(
+                    file_path="test.py", change_type="modify", content="print('working')", description="Working fix"
+                )
+            ],
         )
 
         with (
