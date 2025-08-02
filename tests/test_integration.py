@@ -69,15 +69,15 @@ class TestGitHubClientIntegration:
         config = Config(github_token="test_token", openrouter_api_key="test_key")
         client = GitHubClient(config)
         assert client.config == config
-        assert "Authorization" in client.session.headers
-        assert client.session.headers["Authorization"] == "token test_token"
+        assert "Authorization" in client.client.headers
+        assert client.client.headers["Authorization"] == "token test_token"
 
     def test_github_client_get_issue(self):
         """Test GitHub client can fetch issues."""
         config = Config(github_token="test", openrouter_api_key="test")
         client = GitHubClient(config)
 
-        # Mock the session.get method
+        # Mock the client.get method
         mock_response = Mock()
         mock_response.json.return_value = {
             "number": 1,
@@ -89,7 +89,7 @@ class TestGitHubClientIntegration:
             "html_url": "https://github.com/test/repo/issues/1",
         }
         mock_response.raise_for_status.return_value = None
-        client.session.get = Mock(return_value=mock_response)
+        client.client.get = Mock(return_value=mock_response)
 
         issue = client.get_issue("test/repo", 1)
         assert issue.number == 1
