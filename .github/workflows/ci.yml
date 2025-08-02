@@ -30,15 +30,15 @@ jobs:
 
     - name: Lint with ruff
       run: |
-        uv run ruff check src/ tests/
+        uv run --extra test ruff check src/ tests/
 
     - name: Format check with ruff
       run: |
-        uv run ruff format --check src/ tests/
+        uv run --extra test ruff format --check src/ tests/
 
     - name: Type check with mypy
       run: |
-        uv run mypy src/
+        uv run --extra test mypy src/
 
     - name: Test with pytest
       run: |
