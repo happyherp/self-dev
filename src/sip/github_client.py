@@ -1,6 +1,7 @@
 """GitHub API client for SIP."""
 
 import base64
+from typing import Any
 
 import requests
 
@@ -149,3 +150,11 @@ class GitHubClient:
                 files.extend(subfiles)
 
         return files
+
+    def get_repository(self, repo: str) -> dict[str, Any]:
+        """Get repository information from GitHub."""
+        url = f"https://api.github.com/repos/{repo}"
+        response = self.session.get(url)
+        response.raise_for_status()
+        data: dict[str, Any] = response.json()
+        return data
