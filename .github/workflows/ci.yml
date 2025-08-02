@@ -91,6 +91,13 @@ jobs:
             print('✅ Config validation works correctly')
         "
         
+        # Debug: Check if secrets are available
+        echo "🔍 Debugging secret availability:"
+        echo "AGENT_GITHUB_TOKEN length: ${#AGENT_GITHUB_TOKEN}"
+        echo "OPENROUTER_API_KEY length: ${#OPENROUTER_API_KEY}"
+        echo "AGENT_GITHUB_TOKEN set: $([ -n "$AGENT_GITHUB_TOKEN" ] && echo 'YES' || echo 'NO')"
+        echo "OPENROUTER_API_KEY set: $([ -n "$OPENROUTER_API_KEY" ] && echo 'YES' || echo 'NO')"
+        
         # Test with valid tokens (if available)
         if [ -n "$AGENT_GITHUB_TOKEN" ] && [ -n "$OPENROUTER_API_KEY" ]; then
           echo "✅ Testing with valid tokens"
@@ -101,6 +108,8 @@ jobs:
           "
         else
           echo "⚠️ Skipping token tests (secrets not available)"
+          echo "AGENT_GITHUB_TOKEN empty: $([ -z "$AGENT_GITHUB_TOKEN" ] && echo 'YES' || echo 'NO')"
+          echo "OPENROUTER_API_KEY empty: $([ -z "$OPENROUTER_API_KEY" ] && echo 'YES' || echo 'NO')"
         fi
 
   security:
