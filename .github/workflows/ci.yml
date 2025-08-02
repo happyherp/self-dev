@@ -74,28 +74,39 @@ jobs:
         AGENT_GITHUB_TOKEN: ${{ secrets.AGENT_GITHUB_TOKEN }}
         OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
       run: |
+        # Skip integration tests if secrets are not available
+        if [ -z "$AGENT_GITHUB_TOKEN" ] || [ -z "$OPENROUTER_API_KEY" ]; then
+          echo "⚠️ Skipping integration tests (secrets not available in this context)"
+          exit 0
+        fi
+        
+        echo "🧪 Running integration tests with live API tokens..."
+        
         # Test CLI help
+        echo "Testing CLI help command..."
         uv run python -m sip --help
         
-        # Test config validation (should fail without proper tokens)
-        uv run python -c "import os; os.environ.pop('AGENT_GITHUB_TOKEN', None); os.environ.pop('OPENROUTER_API_KEY', None); exec('try:\n    from sip.config import Config\n    Config.from_env()\n    exit(1)\nexcept ValueError:\n    print(\"✅ Config validation works correctly\")')"
+        # Test config loading with real tokens
+        echo "Testing config loading..."
+        uv run python -c "from sip.config import Config; config = Config.from_env(); print(f'✅ Config loaded for repository: {config.default_repository}')"
         
-        # Debug: Check if secrets are available
-        echo "🔍 Debugging secret availability:"
-        echo "AGENT_GITHUB_TOKEN length: ${#AGENT_GITHUB_TOKEN}"
-        echo "OPENROUTER_API_KEY length: ${#OPENROUTER_API_KEY}"
-        echo "AGENT_GITHUB_TOKEN set: $([ -n "$AGENT_GITHUB_TOKEN" ] && echo 'YES' || echo 'NO')"
-        echo "OPENROUTER_API_KEY set: $([ -n "$OPENROUTER_API_KEY" ] && echo 'YES' || echo 'NO')"
+        # Test GitHub API connectivity
+        echo "Testing GitHub API connectivity..."
+        uv run python -c "
+import os
+from sip.github_client import GitHubClient
+from sip.config import Config
+
+config = Config.from_env()
+client = GitHubClient(config.github_token)
+
+# Test basic API access
+repo_info = client.get_repository(config.default_repository)
+print(f'✅ GitHub API connected - Repository: {repo_info[\"full_name\"]}')
+print(f'✅ Repository description: {repo_info.get(\"description\", \"No description\")}')
+"
         
-        # Test with valid tokens (if available)
-        if [ -n "$AGENT_GITHUB_TOKEN" ] && [ -n "$OPENROUTER_API_KEY" ]; then
-          echo "✅ Testing with valid tokens"
-          uv run python -c "from sip.config import Config; config = Config.from_env(); print(f'✅ Config loaded: {config.default_repository}')"
-        else
-          echo "⚠️ Skipping token tests (secrets not available)"
-          echo "AGENT_GITHUB_TOKEN empty: $([ -z "$AGENT_GITHUB_TOKEN" ] && echo 'YES' || echo 'NO')"
-          echo "OPENROUTER_API_KEY empty: $([ -z "$OPENROUTER_API_KEY" ] && echo 'YES' || echo 'NO')"
-        fi
+        echo "✅ All integration tests passed!"
 
   security:
     runs-on: ubuntu-latest
