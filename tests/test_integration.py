@@ -34,19 +34,19 @@ class TestConfigIntegration:
     def test_config_from_env_missing_github_token(self):
         """Test config fails without GitHub token."""
         with patch.dict(os.environ, {}, clear=True):
-            with pytest.raises(ValueError, match="GITHUB_TOKEN"):
+            with pytest.raises(ValueError, match="AGENT_GITHUB_TOKEN"):
                 Config.from_env()
 
     def test_config_from_env_missing_openrouter_key(self):
         """Test config fails without OpenRouter key."""
-        with patch.dict(os.environ, {"GITHUB_TOKEN": "test"}, clear=True):
+        with patch.dict(os.environ, {"AGENT_GITHUB_TOKEN": "test"}, clear=True):
             with pytest.raises(ValueError, match="OPENROUTER_API_KEY"):
                 Config.from_env()
 
     def test_config_from_env_success(self):
         """Test config creation with environment variables."""
         env = {
-            "GITHUB_TOKEN": "gh_test_token",
+            "AGENT_GITHUB_TOKEN": "gh_test_token",
             "OPENROUTER_API_KEY": "or_test_key",
             "DEFAULT_REPOSITORY": "test/repo",
             "LLM_MODEL": "test/model",

@@ -57,7 +57,7 @@ Select **ONLY** these permissions for the self-dev repository:
 Create a `.env` file in your project root:
 ```bash
 # .env (add to .gitignore!)
-GITHUB_TOKEN=ghp_your_token_here_1234567890abcdef
+AGENT_GITHUB_TOKEN=ghp_your_token_here_1234567890abcdef
 ```
 
 ### **For Production/CI**
@@ -66,14 +66,14 @@ Add as repository secrets:
 2. Click **Settings** tab
 3. Click **Secrets and variables** → **Actions**
 4. Click **New repository secret**
-5. Name: `GITHUB_TOKEN`
+5. Name: `AGENT_GITHUB_TOKEN`
 6. Value: Your token
 7. Click **Add secret**
 
 ### **For Local Development**
 Add to your shell profile (`.bashrc`, `.zshrc`, etc.):
 ```bash
-export GITHUB_TOKEN="ghp_your_token_here_1234567890abcdef"
+export AGENT_GITHUB_TOKEN="ghp_your_token_here_1234567890abcdef"
 ```
 
 ## ✅ **Verify Token Works**
@@ -82,7 +82,7 @@ Test your token with SIP:
 
 ```bash
 # Set the token
-export GITHUB_TOKEN="your_token_here"
+export AGENT_GITHUB_TOKEN="your_token_here"
 
 # Test SIP can access GitHub
 uv run python -m sip process-issue happyherp/self-dev 1 --dry-run
@@ -137,7 +137,7 @@ You should see SIP successfully fetch the issue without errors.
 - Authenticated requests have higher rate limits
 
 ### **Integration Tests Failing**
-- Ensure `GITHUB_TOKEN` environment variable is set
+- Ensure `AGENT_GITHUB_TOKEN` environment variable is set
 - Verify token has Contents, Issues, Metadata, and Pull requests permissions
 - Check token hasn't expired
 - Ensure token has access to the correct repository

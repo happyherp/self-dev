@@ -42,7 +42,7 @@ SIP (Self-Improving Program) is an AI-powered system that:
 
 3. **Set up environment variables**:
    ```bash
-   export GITHUB_TOKEN="your_github_token"
+   export AGENT_GITHUB_TOKEN="your_github_token"
    export OPENROUTER_API_KEY="your_openrouter_key"
    ```
 

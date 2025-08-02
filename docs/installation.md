@@ -49,14 +49,14 @@ SIP requires API keys to function:
 Set these as environment variables:
 
 ```sh
-export GITHUB_TOKEN="your_github_token_here"
+export AGENT_GITHUB_TOKEN="your_github_token_here"
 export OPENROUTER_API_KEY="your_openrouter_key_here"
 ```
 
 Or create a `.env` file in the project root:
 
 ```
-GITHUB_TOKEN=your_github_token_here
+AGENT_GITHUB_TOKEN=your_github_token_here
 OPENROUTER_API_KEY=your_openrouter_key_here
 ```
 
@@ -67,8 +67,8 @@ OPENROUTER_API_KEY=your_openrouter_key_here
 1. Go to your repository on GitHub
 2. Navigate to **Settings** → **Secrets and variables** → **Actions**
 3. Add the following repository secrets:
+   - `AGENT_GITHUB_TOKEN`: Your GitHub token (see [GitHub Token Setup Guide](./github-token-setup.md))
    - `OPENROUTER_API_KEY`: Your OpenRouter API key
-   - Note: `GITHUB_TOKEN` is automatically provided by GitHub Actions
 
 **Without these secrets, the GitHub Actions workflow will fail.**
 
@@ -88,7 +88,7 @@ To verify your GitHub token works correctly:
 
 ```sh
 # Set your token (see GitHub Token Setup guide)
-export GITHUB_TOKEN="your_token_here"
+export AGENT_GITHUB_TOKEN="your_token_here"
 
 # Test GitHub access
 uv run python -c "
@@ -106,11 +106,11 @@ print('✅ GitHub token works!')
 To run the full integration test suite (requires GitHub token):
 
 ```sh
-# Ensure GITHUB_TOKEN is set
-export GITHUB_TOKEN="your_token_here"
+# Ensure AGENT_GITHUB_TOKEN is set
+export AGENT_GITHUB_TOKEN="your_token_here"
 
 # Run integration tests
 uv run python -m pytest tests/test_integration.py -v
 ```
 
-**Note**: Integration tests will be skipped in CI if `GITHUB_TOKEN` is not available.
+**Note**: Integration tests will be skipped in CI if `AGENT_GITHUB_TOKEN` is not available.

@@ -72,7 +72,7 @@ jobs:
 
     - name: Run integration tests
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        AGENT_GITHUB_TOKEN: ${{ secrets.AGENT_GITHUB_TOKEN }}
         OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
       run: |
         # Test CLI help
@@ -81,7 +81,7 @@ jobs:
         # Test config validation (should fail without proper tokens)
         uv run python -c "
         import os
-        os.environ.pop('GITHUB_TOKEN', None)
+        os.environ.pop('AGENT_GITHUB_TOKEN', None)
         os.environ.pop('OPENROUTER_API_KEY', None)
         try:
             from sip.config import Config
@@ -92,7 +92,7 @@ jobs:
         "
         
         # Test with valid tokens (if available)
-        if [ -n "$GITHUB_TOKEN" ] && [ -n "$OPENROUTER_API_KEY" ]; then
+        if [ -n "$AGENT_GITHUB_TOKEN" ] && [ -n "$OPENROUTER_API_KEY" ]; then
           echo "✅ Testing with valid tokens"
           uv run python -c "
           from sip.config import Config

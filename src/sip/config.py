@@ -19,9 +19,9 @@ class Config:
     @classmethod
     def from_env(cls) -> "Config":
         """Create config from environment variables."""
-        github_token = os.getenv("GITHUB_TOKEN")
+        github_token = os.getenv("AGENT_GITHUB_TOKEN")
         if not github_token:
-            raise ValueError("GITHUB_TOKEN environment variable is required")
+            raise ValueError("AGENT_GITHUB_TOKEN environment variable is required")
 
         openrouter_api_key = os.getenv("OPENROUTER_API_KEY")
         if not openrouter_api_key:

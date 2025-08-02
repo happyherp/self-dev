@@ -99,7 +99,7 @@ cd self-dev
 uv pip install -e .
 
 # Configure (defaults to this repository)
-export GITHUB_TOKEN="your_token"
+export AGENT_GITHUB_TOKEN="your_token"
 export OPENROUTER_API_KEY="your_key"
 
 # Optional: Override to work on different repository
@@ -133,7 +133,7 @@ jobs:
       - name: Process Issue
         run: python -m sip process-issue ${{ github.event.issue.number }}
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          AGENT_GITHUB_TOKEN: ${{ secrets.AGENT_GITHUB_TOKEN }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
 ```
 

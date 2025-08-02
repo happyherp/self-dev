@@ -44,7 +44,7 @@ class TestCLI:
             result = runner.invoke(main, ["process-issue", "1", "--repo", "test/repo"])
 
             assert result.exit_code != 0
-            assert "GITHUB_TOKEN" in result.output or "environment variable" in result.output
+            assert "AGENT_GITHUB_TOKEN" in result.output or "environment variable" in result.output
 
     def test_cli_missing_arguments(self):
         """Test CLI requires issue argument."""
@@ -75,7 +75,7 @@ class TestCLI:
 
         runner = CliRunner()
 
-        with patch.dict(os.environ, {"GITHUB_TOKEN": "test_token", "OPENROUTER_API_KEY": "test_key"}):
+        with patch.dict(os.environ, {"AGENT_GITHUB_TOKEN": "test_token", "OPENROUTER_API_KEY": "test_key"}):
             result = runner.invoke(main, ["process-issue", "1", "--repo", "test/repo"])
 
             assert result.exit_code == 0
@@ -97,7 +97,7 @@ class TestCLI:
 
         runner = CliRunner()
 
-        with patch.dict(os.environ, {"GITHUB_TOKEN": "test_token", "OPENROUTER_API_KEY": "test_key"}):
+        with patch.dict(os.environ, {"AGENT_GITHUB_TOKEN": "test_token", "OPENROUTER_API_KEY": "test_key"}):
             result = runner.invoke(main, ["process-issue", "1", "--repo", "test/repo"])
 
             assert result.exit_code == 1
@@ -114,7 +114,7 @@ class TestCLI:
 
         runner = CliRunner()
 
-        with patch.dict(os.environ, {"GITHUB_TOKEN": "test_token", "OPENROUTER_API_KEY": "test_key"}):
+        with patch.dict(os.environ, {"AGENT_GITHUB_TOKEN": "test_token", "OPENROUTER_API_KEY": "test_key"}):
             result = runner.invoke(main, ["process-issue", "1", "--repo", "test/repo"])
 
             assert result.exit_code == 1
@@ -134,7 +134,7 @@ class TestCLI:
         runner = CliRunner()
 
         custom_env = {
-            "GITHUB_TOKEN": "custom_token",
+            "AGENT_GITHUB_TOKEN": "custom_token",
             "OPENROUTER_API_KEY": "custom_key",
             "DEFAULT_REPOSITORY": "custom/repo",
             "LLM_MODEL": "custom/model",
