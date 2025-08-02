@@ -21,21 +21,55 @@ SIP (Self-Improving Program) is an AI-powered system that:
 
 ## Quick Start
 
-1. **Install SIP**:
+### Prerequisites
+- Python 3.10+
+- [uv](https://docs.astral.sh/uv/) (recommended) or pip
+
+### Installation
+
+1. **Clone the repository**:
+   ```bash
+   git clone https://github.com/happyherp/self-dev.git
+   cd self-dev
+   ```
+
+2. **Install SIP**:
+   
+   **With uv (recommended)**:
+   ```bash
+   uv pip install -e .
+   ```
+   
+   **With pip**:
    ```bash
    pip install -e .
    ```
 
-2. **Set up environment variables**:
+3. **Set up environment variables**:
    ```bash
    export GITHUB_TOKEN="your_github_token"
    export OPENROUTER_API_KEY="your_openrouter_key"
    ```
 
-3. **Process an issue**:
+4. **Process an issue**:
    ```bash
    sip process-issue 123
    ```
+
+### Development
+
+For development work, we recommend using `uv` as the project includes `uv`-based development tools:
+
+```bash
+# Install with test dependencies
+uv pip install -e ".[test]"
+
+# Run tests
+make test
+
+# Run quality checks
+make qa
+```
 
 ## Documentation
 

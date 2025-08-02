@@ -1,38 +1,86 @@
 # Installation
 
-## Stable release
+## Prerequisites
 
-To install SIP, run this command in your terminal:
+- Python 3.10 or higher
+- [uv](https://docs.astral.sh/uv/) (recommended) or pip
 
-```sh
-uv add python-boilerplate
-```
+### Installing uv
 
-Or if you prefer to use `pip`:
-
-```sh
-pip install python-boilerplate
-```
-
-## From source
-
-The source files for SIP can be downloaded from the [Github repo](https://github.com/happyherp/sip).
-
-You can either clone the public repository:
+If you don't have `uv` installed, you can install it with:
 
 ```sh
-git clone git://github.com/happyherp/sip
+# On macOS and Linux
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# On Windows
+powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
+
+# Or with pip
+pip install uv
 ```
 
-Or download the [tarball](https://github.com/happyherp/sip/tarball/master):
+## From source (Development)
+
+SIP is currently in development and not yet published to PyPI. Install from source:
+
+1. **Clone the repository**:
+   ```sh
+   git clone https://github.com/happyherp/self-dev.git
+   cd self-dev
+   ```
+
+2. **Install SIP**:
+   
+   **With uv (recommended)**:
+   ```sh
+   uv pip install -e .
+   ```
+   
+   **With pip**:
+   ```sh
+   pip install -e .
+   ```
+
+3. **Install with development dependencies**:
+   
+   **With uv**:
+   ```sh
+   uv pip install -e ".[test]"
+   ```
+   
+   **With pip**:
+   ```sh
+   pip install -e ".[test]"
+   ```
+
+## Environment Setup
+
+SIP requires API keys to function:
+
+1. **GitHub Token**: Create a personal access token at https://github.com/settings/tokens
+2. **OpenRouter API Key**: Get an API key from https://openrouter.ai/
+
+Set these as environment variables:
 
 ```sh
-curl -OJL https://github.com/happyherp/sip/tarball/master
+export GITHUB_TOKEN="your_github_token_here"
+export OPENROUTER_API_KEY="your_openrouter_key_here"
 ```
 
-Once you have a copy of the source, you can install it with:
+Or create a `.env` file in the project root:
+
+```
+GITHUB_TOKEN=your_github_token_here
+OPENROUTER_API_KEY=your_openrouter_key_here
+```
+
+## Verification
+
+Verify the installation by running:
 
 ```sh
-cd sip
-uv pip install .
+sip --help
 ```
+
+You should see the SIP command-line interface help message.

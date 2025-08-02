@@ -52,7 +52,7 @@ qa: ## fix style, sort imports, check types
 	uv run --extra test ruff check . --fix
 	uv run --extra test ruff check --select I --fix .
 	uv run --extra test ruff format .
-	uv run --extra test ty check .
+	uv run --extra test mypy src/
 
 MAKECMDGOALS ?= .	
 
