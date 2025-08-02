@@ -7,7 +7,7 @@ on:
     branches: [ main ]
 
 jobs:
-  test:
+  unit-tests:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -50,10 +50,9 @@ jobs:
         file: ./coverage.xml
         fail_ci_if_error: false
 
-  integration-test:
+  integration-tests:
     runs-on: ubuntu-latest
-    needs: test
-    if: github.event_name == 'pull_request'
+    needs: unit-tests
     
     steps:
     - uses: actions/checkout@v4
