@@ -10,9 +10,9 @@ def main() -> None:
 
 
 @main.command()
-@click.argument('issue_number', type=int)
-@click.option('--repo', help='Repository in format owner/repo (defaults to happyherp/self-dev)')
-def process_issue(issue_number: int, repo: str = None) -> None:
+@click.argument("issue_number", type=int)
+@click.option("--repo", help="Repository in format owner/repo (defaults to happyherp/self-dev)")
+def process_issue(issue_number: int, repo: str | None = None) -> None:
     """Process a GitHub issue with AI."""
     click.echo(f"Processing issue #{issue_number}")
     if repo:
