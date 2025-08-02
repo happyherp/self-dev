@@ -1,10 +1,9 @@
 #!/usr/bin/env python
 """Tests for SIP."""
 
-import pytest
 
 from sip.config import Config
-from sip.test_runner import SipTestRunner, SipTestResult
+from sip.test_runner import SipTestResult, SipTestRunner
 
 
 def test_config_creation():
@@ -53,7 +52,7 @@ def test_test_runner_format_failure():
         error_output="Error details",
         return_code=1
     )
-    
+
     formatted = runner.format_test_failure(result)
     assert "TESTS FAILED" in formatted
     assert "return code: 1" in formatted

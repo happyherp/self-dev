@@ -1,0 +1,202 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v4
+      with:
+        version: "latest"
+
+    - name: Set up Python ${{ matrix.python-version }}
+      run: uv python install ${{ matrix.python-version }}
+
+    - name: Install dependencies
+      run: |
+        uv sync --extra test
+
+    - name: Lint with ruff
+      run: |
+        uv run ruff check src/ tests/
+
+    - name: Format check with ruff
+      run: |
+        uv run ruff format --check src/ tests/
+
+    - name: Type check with mypy
+      run: |
+        uv run mypy src/
+
+    - name: Test with pytest
+      run: |
+        uv run python -m pytest tests/ -v --cov=src/sip --cov-report=xml --cov-report=term
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v4
+      with:
+        file: ./coverage.xml
+        fail_ci_if_error: false
+
+  integration-test:
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.event_name == 'pull_request'
+    
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v4
+      with:
+        version: "latest"
+
+    - name: Set up Python
+      run: uv python install 3.12
+
+    - name: Install dependencies
+      run: |
+        uv sync --extra test
+
+    - name: Run integration tests
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      run: |
+        # Test CLI help
+        uv run python -m sip --help
+        
+        # Test config validation (should fail without proper tokens)
+        uv run python -c "
+        import os
+        os.environ.pop('GITHUB_TOKEN', None)
+        os.environ.pop('OPENROUTER_API_KEY', None)
+        try:
+            from sip.config import Config
+            Config.from_env()
+            exit(1)  # Should not reach here
+        except ValueError:
+            print('✅ Config validation works correctly')
+        "
+        
+        # Test with valid tokens (if available)
+        if [ -n "$GITHUB_TOKEN" ] && [ -n "$OPENROUTER_API_KEY" ]; then
+          echo "✅ Testing with valid tokens"
+          uv run python -c "
+          from sip.config import Config
+          config = Config.from_env()
+          print(f'✅ Config loaded: {config.default_repository}')
+          "
+        else
+          echo "⚠️ Skipping token tests (secrets not available)"
+        fi
+
+  security:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v4
+      with:
+        version: "latest"
+
+    - name: Set up Python
+      run: uv python install 3.12
+
+    - name: Install dependencies
+      run: |
+        uv sync --extra test
+
+    - name: Run security checks
+      run: |
+        # Check for common security issues
+        uv run python -c "
+        import ast
+        import os
+        
+        def check_file(filepath):
+            with open(filepath, 'r') as f:
+                try:
+                    tree = ast.parse(f.read())
+                    for node in ast.walk(tree):
+                        # Check for eval/exec usage
+                        if isinstance(node, ast.Call) and isinstance(node.func, ast.Name):
+                            if node.func.id in ['eval', 'exec']:
+                                print(f'⚠️ Found {node.func.id} in {filepath}')
+                        # Check for subprocess with shell=True
+                        if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute):
+                            if node.func.attr in ['run', 'call', 'check_call']:
+                                for keyword in node.keywords:
+                                    if keyword.arg == 'shell' and isinstance(keyword.value, ast.Constant):
+                                        if keyword.value.value is True:
+                                            print(f'⚠️ Found subprocess with shell=True in {filepath}')
+                except SyntaxError:
+                    pass
+        
+        for root, dirs, files in os.walk('src'):
+            for file in files:
+                if file.endswith('.py'):
+                    check_file(os.path.join(root, file))
+        
+        print('✅ Security check completed')
+        "
+
+  build:
+    runs-on: ubuntu-latest
+    needs: [test, security]
+    
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v4
+      with:
+        version: "latest"
+
+    - name: Set up Python
+      run: uv python install 3.12
+
+    - name: Build package
+      run: |
+        uv build
+
+    - name: Check package
+      run: |
+        uv run python -c "
+        import tarfile
+        import zipfile
+        import os
+        
+        # Check that build artifacts exist
+        dist_files = os.listdir('dist')
+        wheel_files = [f for f in dist_files if f.endswith('.whl')]
+        tar_files = [f for f in dist_files if f.endswith('.tar.gz')]
+        
+        if not wheel_files:
+            raise Exception('No wheel file found')
+        if not tar_files:
+            raise Exception('No source distribution found')
+            
+        print(f'✅ Built {len(wheel_files)} wheel(s) and {len(tar_files)} source distribution(s)')
+        for f in dist_files:
+            print(f'  - {f}')
+        "
+
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: dist-${{ github.sha }}
+        path: dist/

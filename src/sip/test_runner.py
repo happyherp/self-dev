@@ -1,9 +1,7 @@
 """Test runner for SIP."""
 
 import subprocess
-import sys
 from dataclasses import dataclass
-from typing import Any
 
 
 @dataclass
@@ -21,7 +19,7 @@ class SipTestRunner:
 
     def __init__(self, test_command: list[str] | None = None) -> None:
         """Initialize test runner.
-        
+
         Args:
             test_command: Command to run tests. Defaults to pytest.
         """
@@ -29,10 +27,10 @@ class SipTestRunner:
 
     def run_tests(self, cwd: str | None = None) -> SipTestResult:
         """Run tests and return results.
-        
+
         Args:
             cwd: Working directory to run tests in.
-            
+
         Returns:
             TestResult with success status and output.
         """
@@ -44,7 +42,7 @@ class SipTestRunner:
                 text=True,
                 timeout=300,  # 5 minute timeout
             )
-            
+
             return SipTestResult(
                 success=result.returncode == 0,
                 output=result.stdout,
@@ -68,10 +66,10 @@ class SipTestRunner:
 
     def format_test_failure(self, test_result: SipTestResult) -> str:
         """Format test failure for AI feedback.
-        
+
         Args:
             test_result: Failed test result.
-            
+
         Returns:
             Formatted error message for AI.
         """

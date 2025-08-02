@@ -9,7 +9,7 @@ from .config import Config
 from .github_client import GitHubClient
 from .llm_client import LLMClient
 from .models import ProcessingResult
-from .test_runner import SipTestRunner
+from .test_runner import SipTestResult, SipTestRunner
 
 
 class IssueProcessor:
@@ -60,7 +60,7 @@ class IssueProcessor:
 
             for attempt in range(self.config.max_retry_attempts):
                 self.logger.info(f"Generating solution (attempt {attempt + 1}/{self.config.max_retry_attempts})...")
-                
+
                 # Generate solution
                 pull_request = self.llm.generate_solution(
                     issue, analysis, file_contents, previous_attempt, test_failure
@@ -77,7 +77,7 @@ class IssueProcessor:
 
                 # 7. Test the solution before committing
                 test_result = self._test_solution_in_temp_repo(repo, pull_request)
-                
+
                 if test_result.success:
                     self.logger.info("✅ Tests passed! Proceeding with commit...")
                     break
@@ -97,14 +97,17 @@ class IssueProcessor:
                         ]
                     }, indent=2)
                     test_failure = self.test_runner.format_test_failure(test_result)
-                    
+
                     if attempt == self.config.max_retry_attempts - 1:
                         return ProcessingResult(
                             issue=issue,
                             analysis=analysis,
                             pull_request=pull_request,
                             success=False,
-                            error_message=f"Tests failed after {self.config.max_retry_attempts} attempts. Last failure: {test_failure}",
+                            error_message=(
+                            f"Tests failed after {self.config.max_retry_attempts} attempts. "
+                            f"Last failure: {test_failure}"
+                        ),
                         )
 
             # 8. Create branch and commit changes (tests passed)
@@ -182,10 +185,10 @@ class IssueProcessor:
 
         return file_contents
 
-    def _test_solution_in_temp_repo(self, repo: str, pull_request) -> "SipTestResult":
+    def _test_solution_in_temp_repo(self, repo: str, pull_request) -> SipTestResult:
         """Test the solution in a temporary repository clone."""
-        from .test_runner import SipTestResult
-        
+
+
         with tempfile.TemporaryDirectory() as temp_dir:
             try:
                 # Clone the repository
@@ -197,11 +200,11 @@ class IssueProcessor:
                     capture_output=True,
                     text=True,
                 )
-                
+
                 # Apply the changes
                 for change in pull_request.changes:
                     file_path = Path(temp_dir) / change.file_path
-                    
+
                     if change.change_type == "create" or change.change_type == "modify":
                         # Ensure directory exists
                         file_path.parent.mkdir(parents=True, exist_ok=True)
@@ -209,10 +212,10 @@ class IssueProcessor:
                     elif change.change_type == "delete":
                         if file_path.exists():
                             file_path.unlink()
-                
+
                 # Run tests
                 return self.test_runner.run_tests(cwd=temp_dir)
-                
+
             except subprocess.CalledProcessError as e:
                 return SipTestResult(
                     success=False,
