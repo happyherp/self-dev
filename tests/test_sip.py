@@ -2,6 +2,8 @@
 """Tests for SIP."""
 
 from sip.config import Config
+from sip.models import GitHubIssue, ProcessingResult
+from sip.sip import SIP
 from sip.test_runner import SipTestResult, SipTestRunner
 
 
@@ -44,3 +46,31 @@ def test_test_runner_format_failure():
     assert "return code: 1" in formatted
     assert "Test output" in formatted
     assert "Error details" in formatted
+
+
+def test_sip_initialization():
+    """Test SIP initialization."""
+    sip = SIP(github_token="test_token")
+    assert sip.github_token == "test_token"
+
+
+def test_sip_process_issue():
+    """Test processing an issue."""
+    sip = SIP(github_token="test_token")
+    issue = GitHubIssue(
+        number=1,
+        title="Test Issue",
+        body="Test body",
+        author="test_user",
+        labels=["bug"],
+        state="open",
+        html_url="https://github.com/test/test/issues/1",
+        repository="test/test"
+    )
+
+    result = sip.process_issue(issue)
+    assert isinstance(result, ProcessingResult)
+    assert result.success is True
+    assert result.issue == issue
+    assert result.analysis is not None
+    assert result.analysis.confidence > 0
