@@ -6,23 +6,19 @@ SIP is a minimal, GitHub-native autonomous development system that primarily ope
 
 The system is designed to improve itself by working on its own issues, but can also be configured to work on other repositories.
 
-## Design Philosophy: Radical Simplicity
+## Design Principles
 
-**Essential Principle**: This project must be kept simple above all else.
+### Simplicity First
+When faced with choices like "support A or B or both", we choose **one option** unless supporting both genuinely reduces complexity. Supporting multiple approaches typically adds maintenance burden, documentation overhead, and user confusion.
 
-When faced with choices like "support A or B or both", we choose **one option** unless supporting both genuinely reduces complexity (less code, fewer concepts). Supporting multiple approaches typically adds:
-- More documentation to maintain
-- More code paths to test
-- More decisions for users to make
-- More potential failure modes
+### GitHub-Native
+Built specifically for GitHub workflows - issues, pull requests, and Actions integration.
 
-We prioritize:
-- **Single, clear path** over multiple options
-- **Fewer dependencies** over feature completeness  
-- **Less code** over flexibility
-- **One way to do it** over accommodating all preferences
+### AI-Powered
+Leverages modern LLMs for intelligent code analysis and generation.
 
-This principle applies to everything: package managers, CLI frameworks, deployment methods, configuration formats, etc.
+### Human-in-the-Loop
+All changes require human review and approval before merging.
 
 ## How It Works
 

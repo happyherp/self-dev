@@ -2,16 +2,16 @@
 
 Contributions are welcome, and they are greatly appreciated! Every little bit helps, and credit will always be given.
 
-## Design Philosophy
+## Design Principles
 
-**Before contributing, please understand our core principle: Radical Simplicity.**
+Please understand our key design principles before contributing:
 
-- Choose **one approach** over supporting multiple options
-- Prefer **fewer dependencies** over feature completeness
-- Prioritize **less code** over flexibility
-- When in doubt, choose the simpler solution
+- **Simplicity First**: Choose one approach over supporting multiple options when possible
+- **GitHub-Native**: Built specifically for GitHub workflows and integration
+- **AI-Powered**: Leverage LLMs for intelligent analysis and code generation
+- **Human-in-the-Loop**: All changes require human review and approval
 
-See [PROJECT.md](PROJECT.md) for detailed philosophy.
+See [PROJECT.md](PROJECT.md) for detailed principles.
 
 You can contribute in many ways:
 

@@ -11,7 +11,7 @@ SIP (Self-Improving Program) is an AI-powered system that:
 3. **Generates Solutions**: Creates code changes to address the issue
 4. **Submits Pull Requests**: Opens PRs with the proposed changes for human review
 
-**Design Philosophy**: SIP prioritizes radical simplicity - one clear path over multiple options, fewer dependencies over features, less code over flexibility.
+**Design Philosophy**: SIP is GitHub-native, AI-powered, and prioritizes simplicity with human oversight.
 
 ## Features
 
