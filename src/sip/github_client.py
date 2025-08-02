@@ -114,7 +114,7 @@ class GitHubClient:
 
         # Delete file
         data = {"message": message, "sha": file_sha, "branch": branch}
-        response = self.client.delete(url, json=data)
+        response = self.client.request("DELETE", url, json=data)
         response.raise_for_status()
 
     def create_pull_request(self, repo: str, pr: PullRequest) -> str:

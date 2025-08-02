@@ -19,7 +19,7 @@ class LLMClient:
             default_headers={
                 "HTTP-Referer": "https://github.com/happyherp/self-dev",
                 "X-Title": "SIP - Self-Improving Program",
-            }
+            },
         )
         # Patch with instructor for structured outputs
         self.client = instructor.from_openai(openai_client)

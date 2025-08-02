@@ -27,12 +27,12 @@ class AnalysisResult(BaseModel):
     files_to_modify: list[str] = Field(description="List of files that need modification")
     confidence: float = Field(ge=0.0, le=1.0, description="Confidence level between 0.0 and 1.0")
 
-    @field_validator('problem_type')
+    @field_validator("problem_type")
     @classmethod
-    def validate_problem_type(cls, v):
-        allowed_types = {'bug', 'feature', 'documentation', 'enhancement', 'other'}
+    def validate_problem_type(cls, v: str) -> str:
+        allowed_types = {"bug", "feature", "documentation", "enhancement", "other"}
         if v not in allowed_types:
-            raise ValueError(f'problem_type must be one of {allowed_types}')
+            raise ValueError(f"problem_type must be one of {allowed_types}")
         return v
 
 
@@ -40,7 +40,7 @@ class CodeChange(BaseModel):
     """Represents a code change to be made."""
 
     file_path: str = Field(description="Path to the file to be changed")
-    change_type: Literal['create', 'modify', 'delete'] = Field(description="Type of change: create, modify, or delete")
+    change_type: Literal["create", "modify", "delete"] = Field(description="Type of change: create, modify, or delete")
     content: str = Field(description="Complete new content of the file (for create/modify)")
     description: str = Field(description="Brief description of what this change does")
 

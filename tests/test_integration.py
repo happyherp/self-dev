@@ -118,7 +118,7 @@ class TestLLMClientIntegration:
             problem_type="bug",
             suggested_approach="Fix the bug",
             files_to_modify=["test.py"],
-            confidence=0.8
+            confidence=0.8,
         )
         client.client.chat.completions.create = Mock(return_value=mock_analysis)
 
@@ -283,24 +283,22 @@ class TestEndToEndIntegration:
             title="Fix: Test Issue (broken)",
             body="This is broken",
             branch_name="sip/issue-1-test",
-            changes=[CodeChange(
-                file_path="test.py",
-                change_type="modify",
-                content="print('broken')",
-                description="Broken fix"
-            )],
+            changes=[
+                CodeChange(
+                    file_path="test.py", change_type="modify", content="print('broken')", description="Broken fix"
+                )
+            ],
         )
 
         working_pr = PullRequest(
             title="Fix: Test Issue (working)",
             body="This works",
             branch_name="sip/issue-1-test",
-            changes=[CodeChange(
-                file_path="test.py",
-                change_type="modify",
-                content="print('working')",
-                description="Working fix"
-            )],
+            changes=[
+                CodeChange(
+                    file_path="test.py", change_type="modify", content="print('working')", description="Working fix"
+                )
+            ],
         )
 
         with (
