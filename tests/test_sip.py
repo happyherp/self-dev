@@ -28,7 +28,7 @@ def test_config_creation():
     assert config.github_token == "test_token"
     assert config.openrouter_api_key == "test_key"
     assert config.max_retry_attempts == 5
-    assert config.llm_model == "anthropic/claude-3.5-sonnet"
+    assert config.llm_model == "anthropic/claude-sonnet-4"
 
 
 def test_test_runner_initialization():
