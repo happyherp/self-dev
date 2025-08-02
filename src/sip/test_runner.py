@@ -1,6 +1,6 @@
 """Test runner for SIP."""
 
-import subprocess
+import subprocess  # nosec B404
 from dataclasses import dataclass
 
 
@@ -35,7 +35,7 @@ class SipTestRunner:
             TestResult with success status and output.
         """
         try:
-            result = subprocess.run(
+            result = subprocess.run(  # nosec B603
                 self.test_command,
                 cwd=cwd,
                 capture_output=True,

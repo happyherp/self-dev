@@ -1,11 +1,9 @@
-#!/usr/bin/env python
 """Tests for SIP CLI."""
 
 import os
 from unittest.mock import Mock, patch
 
 from click.testing import CliRunner
-
 from sip.cli import main
 from sip.models import AnalysisResult, GitHubIssue, ProcessingResult
 

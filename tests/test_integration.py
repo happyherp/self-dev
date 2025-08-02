@@ -1,11 +1,9 @@
-#!/usr/bin/env python
 """Integration tests for SIP."""
 
 import os
 from unittest.mock import Mock, patch
 
 import pytest
-
 from sip.config import Config
 from sip.github_client import GitHubClient
 from sip.issue_processor import IssueProcessor
