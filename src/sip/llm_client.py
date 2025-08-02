@@ -66,9 +66,9 @@ Respond in JSON format:
                 confidence=data["confidence"],
             )
         except json.JSONDecodeError as e:
-            raise ValueError(f"LLM returned invalid JSON response: {str(e)}\nRaw response: {response}")
+            raise ValueError(f"LLM returned invalid JSON response: {str(e)}\nRaw response: {response}") from e
         except KeyError as e:
-            raise ValueError(f"LLM response missing required field {str(e)}\nRaw response: {response}")
+            raise ValueError(f"LLM response missing required field {str(e)}\nRaw response: {response}") from e
 
     def generate_solution(
         self,
@@ -161,9 +161,11 @@ IMPORTANT:
 
             return PullRequest(title=data["title"], body=data["body"], branch_name=data["branch_name"], changes=changes)
         except json.JSONDecodeError as e:
-            raise ValueError(f"LLM returned invalid JSON response for solution: {str(e)}\nRaw response: {response}")
+            raise ValueError(
+                f"LLM returned invalid JSON response for solution: {str(e)}\nRaw response: {response}"
+            ) from e
         except KeyError as e:
-            raise ValueError(f"LLM solution response missing required field {str(e)}\nRaw response: {response}")
+            raise ValueError(f"LLM solution response missing required field {str(e)}\nRaw response: {response}") from e
 
     def _call_llm(self, prompt: str) -> str:
         """Make a call to the LLM via OpenRouter."""
