@@ -1,5 +1,4 @@
 
-
 ### 🧠 Concept Summary: Self-Improving Program (SIP)
 
 **Core Idea:**
@@ -29,10 +28,9 @@ A visual flow of the SIP lifecycle:
 
 ---
 
-### 🧰 Design Principles 
+### 🧰 Design Principles
 
 See: doc/img/idea_2.jpeg
-
 
 * Inspired by OpenHands, but simplified for self-improvement.
 * **Stack**: Pure Python
@@ -44,18 +42,16 @@ See: doc/img/idea_2.jpeg
 * **Record Everything** (for later learning or feedback loops. especially AI conversations.)
 * **Trigger Point = Issue creation**
 * **One Dedicated Token** (cost-conscious — OpenRouter)
-* **Build MVP, then let it run** 
+* **Build MVP, then let it run**
 
 ---
 
-### 🛠️ Execution Mechanics 
+### 🛠️ Execution Mechanics
 
 See: doc/img/idea_3.jpeg
 
-
 * **Branch checked out**
 * **Full codebase loaded into context**
-
 
 #### ACTION: EDIT
 
@@ -68,16 +64,14 @@ See: doc/img/idea_3.jpeg
     {
         "path":"myfile.txt",
         "content": null
-    }    
+    }
 ]
 ```
-
 
 Triggers Run compile + test
 
     * On success → push PR
     * On fail → close + retry
-
 
 # ACTION: SUBMIT
 
@@ -97,7 +91,7 @@ Otherwise commit, create the PR.
 
 # CI
 
-The CI is set up, so that if there is a PR, and the tests all pass, it will be automatically merged to main. 
+The CI is set up, so that if there is a PR, and the tests all pass, it will be automatically merged to main.
 
 ### 🔑 Key Innovations
 

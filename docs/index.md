@@ -1,4 +1,4 @@
-# Welcome to SIP's documentation!
+# Welcome to SIP's documentation
 
 ## Contents
 

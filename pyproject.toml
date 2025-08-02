@@ -35,6 +35,7 @@ test = [
     "ruff",  # linting
     "mypy", # type checking
     "types-requests",  # type stubs for requests
+    "pre-commit",  # pre-commit hooks
 ]
 
 [project.urls]
@@ -66,3 +67,7 @@ select = [
 
 [tool.uv]
 package = true
+
+[tool.bandit]
+exclude_dirs = ["tests"]
+skips = ["B101", "B110", "B112"]  # Skip assert_used, try_except_pass, try_except_continue

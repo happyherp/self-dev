@@ -20,7 +20,7 @@ You can contribute in many ways:
 
 ### Report Bugs
 
-Report bugs at https://github.com/happyherp/self-dev/issues.
+Report bugs at <https://github.com/happyherp/self-dev/issues>.
 
 If you are reporting a bug, please include:
 
@@ -42,7 +42,7 @@ SIP could always use more documentation, whether as part of the official docs, i
 
 ### Submit Feedback
 
-The best way to send feedback is to file an issue at https://github.com/happyherp/sip/issues.
+The best way to send feedback is to file an issue at <https://github.com/happyherp/sip/issues>.
 
 If you are proposing a feature:
 
@@ -50,7 +50,7 @@ If you are proposing a feature:
 - Keep the scope as narrow as possible, to make it easier to implement.
 - Remember that this is a volunteer-driven project, and that contributions are welcome :)
 
-## Get Started!
+## Get Started
 
 Ready to contribute? Here's how to set up `sip` for local development.
 

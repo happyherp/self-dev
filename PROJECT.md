@@ -9,18 +9,23 @@ The system is designed to improve itself by working on its own issues, but can a
 ## Design Principles
 
 ### AI-Driven Software Development
+
 This project is fundamentally about enabling AI to develop software autonomously. Everything else serves this primary goal.
 
 ### Simplicity
+
 Makes it easier for AI to understand, modify, and extend the codebase. Ensures consistent runtime conditions between AI sandbox, CI tests, and human development environments - essential for reliable self-development.
 
 ### Test-Driven Development
+
 Automatic tests are critical since we rely on them far more than traditional projects. We develop test-first when possible and prioritize integration and end-to-end tests, even when they're challenging to implement.
 
 ### GitHub-Native
+
 Built specifically for GitHub workflows - issues, pull requests, and Actions integration provide the natural interface for AI-driven development.
 
 ### Minimal Human Oversight
+
 Currently humans gate merges to main, but the long-term goal is full autonomy. We minimize human intervention points to eventually achieve complete AI-driven development cycles.
 
 ## How It Works
@@ -38,12 +43,14 @@ GitHub Issue → GitHub Actions → AI Analysis → Code Changes → Pull Reques
 ## Architecture
 
 ### Core Components
+
 - **CLI Tool**: `python -m sip process-issue <number>`
 - **GitHub Actions**: Triggers AI on issue creation
 - **OpenRouter LLM**: Cost-effective AI processing
 - **GitHub API**: All operations through GitHub
 
 ### Project Structure
+
 ```
 sip/
 ├── cli.py                 # Command-line interface
@@ -63,6 +70,7 @@ sip/
 The AI can perform two actions:
 
 ### EDIT Action
+
 ```json
 {
   "action": "EDIT",
@@ -76,6 +84,7 @@ The AI can perform two actions:
 ```
 
 ### SUBMIT Action
+
 ```json
 {
   "action": "SUBMIT",
@@ -88,10 +97,12 @@ The AI can perform two actions:
 ## Setup
 
 ### Prerequisites
+
 - OpenRouter API key
 - GitHub token with repo access
 
 ### Installation
+
 ```bash
 # Clone and install
 git clone https://github.com/happyherp/self-dev.git
@@ -110,6 +121,7 @@ python -m sip process-issue 1
 ```
 
 ### GitHub Actions Setup
+
 ```yaml
 # .github/workflows/process-issue.yml
 name: Process Issue with AI
@@ -151,6 +163,7 @@ jobs:
 **Status**: 📋 Planning Phase - Architecture Defined
 
 **Next Steps**:
+
 1. Generate cookiecutter-pypackage structure
 2. Implement core components
 3. Add comprehensive tests

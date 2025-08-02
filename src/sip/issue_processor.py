@@ -161,7 +161,7 @@ class IssueProcessor:
                     content = self.github.get_file_content(repo, file_path)
                     if content:
                         context += f"--- {file_path} ---\n{content[:1000]}...\n\n"
-                except Exception:
+                except Exception:  # nosec B110
                     continue
 
             # Get directory structure
@@ -172,7 +172,7 @@ class IssueProcessor:
                 important_files = [f for f in files if any(f.endswith(ext) for ext in important_extensions)]
                 context += "--- File Structure ---\n"
                 context += "\n".join(important_files[:50])  # Limit to first 50 files
-            except Exception:
+            except Exception:  # nosec B110
                 pass
 
             return context
@@ -206,10 +206,10 @@ class IssueProcessor:
         with tempfile.TemporaryDirectory() as temp_dir:
             try:
                 # Clone the repository
-                import subprocess
+                import subprocess  # nosec B404
 
                 clone_url = f"https://github.com/{repo}.git"
-                subprocess.run(
+                subprocess.run(  # nosec B603 B607
                     ["git", "clone", clone_url, temp_dir],
                     check=True,
                     capture_output=True,

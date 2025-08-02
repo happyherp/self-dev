@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """Tests for SIP."""
 
 from sip.config import Config

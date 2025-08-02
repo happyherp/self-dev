@@ -20,17 +20,20 @@ powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
 SIP is currently in development and not yet published to PyPI. Install from source:
 
 1. **Clone the repository**:
+
    ```sh
    git clone https://github.com/happyherp/self-dev.git
    cd self-dev
    ```
 
 2. **Install SIP and dependencies**:
+
    ```sh
    uv sync
    ```
 
 3. **Install with development dependencies**:
+
    ```sh
    uv sync --extra test
    ```
@@ -41,8 +44,8 @@ SIP requires API keys to function:
 
 1. **GitHub Token**: Create a personal access token with minimal required permissions
    - 📋 **[Complete Setup Guide](./github-token-setup.md)** - Follow this for secure token creation
-   - 🔗 Quick link: https://github.com/settings/tokens
-2. **OpenRouter API Key**: Get an API key from https://openrouter.ai/
+   - 🔗 Quick link: <https://github.com/settings/tokens>
+2. **OpenRouter API Key**: Get an API key from <https://openrouter.ai/>
 
 ### For Local Development
 
@@ -75,6 +78,7 @@ OPENROUTER_API_KEY=your_openrouter_key_here
 ## Verification
 
 ### Basic Installation
+
 Verify the installation by running:
 
 ```sh
@@ -84,6 +88,7 @@ uv run sip --help
 You should see the SIP command-line interface help message.
 
 ### GitHub Integration
+
 To verify your GitHub token works correctly:
 
 ```sh
@@ -103,6 +108,7 @@ print('✅ GitHub token works!')
 ```
 
 ### Integration Tests
+
 To run the full integration test suite (requires GitHub token):
 
 ```sh
