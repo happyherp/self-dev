@@ -78,17 +78,7 @@ jobs:
         uv run python -m sip --help
         
         # Test config validation (should fail without proper tokens)
-        uv run python -c "
-import os
-os.environ.pop('AGENT_GITHUB_TOKEN', None)
-os.environ.pop('OPENROUTER_API_KEY', None)
-try:
-    from sip.config import Config
-    Config.from_env()
-    exit(1)  # Should not reach here
-except ValueError:
-    print('✅ Config validation works correctly')
-        "
+        uv run python -c "import os; os.environ.pop('AGENT_GITHUB_TOKEN', None); os.environ.pop('OPENROUTER_API_KEY', None); exec('try:\n    from sip.config import Config\n    Config.from_env()\n    exit(1)\nexcept ValueError:\n    print(\"✅ Config validation works correctly\")')"
         
         # Debug: Check if secrets are available
         echo "🔍 Debugging secret availability:"
@@ -100,11 +90,7 @@ except ValueError:
         # Test with valid tokens (if available)
         if [ -n "$AGENT_GITHUB_TOKEN" ] && [ -n "$OPENROUTER_API_KEY" ]; then
           echo "✅ Testing with valid tokens"
-          uv run python -c "
-from sip.config import Config
-config = Config.from_env()
-print(f'✅ Config loaded: {config.default_repository}')
-          "
+          uv run python -c "from sip.config import Config; config = Config.from_env(); print(f'✅ Config loaded: {config.default_repository}')"
         else
           echo "⚠️ Skipping token tests (secrets not available)"
           echo "AGENT_GITHUB_TOKEN empty: $([ -z "$AGENT_GITHUB_TOKEN" ] && echo 'YES' || echo 'NO')"
