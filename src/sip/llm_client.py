@@ -76,13 +76,31 @@ Respond in JSON format:
             )
 
     def generate_solution(
-        self, issue: GitHubIssue, analysis: AnalysisResult, file_contents: dict[str, str]
+        self,
+        issue: GitHubIssue,
+        analysis: AnalysisResult,
+        file_contents: dict[str, str],
+        previous_attempt: str | None = None,
+        test_failure: str | None = None,
     ) -> PullRequest:
         """Generate a complete solution for the issue."""
 
         files_context = ""
         for file_path, content in file_contents.items():
             files_context += f"\n--- {file_path} ---\n{content}\n"
+
+        retry_context = ""
+        if previous_attempt and test_failure:
+            retry_context = f"""
+PREVIOUS ATTEMPT FAILED:
+The previous solution failed tests. Here was the previous attempt:
+{previous_attempt}
+
+TEST FAILURE:
+{test_failure}
+
+Please fix the issues and provide a corrected solution.
+"""
 
         prompt = f"""You are SIP (Self-Improving Program). Generate a complete solution for this GitHub issue.
 
@@ -95,6 +113,8 @@ ANALYSIS:
 
 CURRENT FILES:
 {files_context}
+
+{retry_context}
 
 Generate a complete solution including:
 1. A descriptive pull request title

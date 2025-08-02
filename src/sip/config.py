@@ -14,6 +14,7 @@ class Config:
     llm_model: str = "anthropic/claude-3.5-sonnet"
     max_file_size: int = 100000  # 100KB
     max_files_per_pr: int = 10
+    max_retry_attempts: int = 5
 
     @classmethod
     def from_env(cls) -> "Config":
@@ -31,4 +32,5 @@ class Config:
             openrouter_api_key=openrouter_api_key,
             default_repository=os.getenv("DEFAULT_REPOSITORY", "happyherp/self-dev"),
             llm_model=os.getenv("LLM_MODEL", "anthropic/claude-3.5-sonnet"),
+            max_retry_attempts=int(os.getenv("MAX_RETRY_ATTEMPTS", "5")),
         )

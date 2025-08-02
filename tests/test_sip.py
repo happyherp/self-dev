@@ -1,22 +1,61 @@
 #!/usr/bin/env python
+"""Tests for SIP."""
+
 import pytest
 
-"""Tests for `sip` package."""
-
-# from sip import sip
-
-
-@pytest.fixture
-def response():
-    """Sample pytest fixture.
-
-    See more at: http://doc.pytest.org/en/latest/fixture.html
-    """
-    # import requests
-    # return requests.get('https://github.com/audreyfeldroy/cookiecutter-pypackage')
+from sip.config import Config
+from sip.test_runner import SipTestRunner, SipTestResult
 
 
-def test_content(response):
-    """Sample pytest test function with the pytest fixture as an argument."""
-    # from bs4 import BeautifulSoup
-    # assert 'GitHub' in BeautifulSoup(response.content).title.string
+def test_config_creation():
+    """Test config creation with defaults."""
+    config = Config(
+        github_token="test_token",
+        openrouter_api_key="test_key"
+    )
+    assert config.github_token == "test_token"
+    assert config.openrouter_api_key == "test_key"
+    assert config.max_retry_attempts == 5
+    assert config.llm_model == "anthropic/claude-3.5-sonnet"
+
+
+def test_test_runner_initialization():
+    """Test test runner can be initialized."""
+    runner = SipTestRunner()
+    assert runner.test_command == ["python", "-m", "pytest", "-v"]
+
+
+def test_test_runner_custom_command():
+    """Test test runner with custom command."""
+    runner = SipTestRunner(["echo", "test"])
+    assert runner.test_command == ["echo", "test"]
+
+
+def test_test_result_creation():
+    """Test test result creation."""
+    result = SipTestResult(
+        success=True,
+        output="All tests passed",
+        error_output="",
+        return_code=0
+    )
+    assert result.success is True
+    assert result.output == "All tests passed"
+    assert result.return_code == 0
+
+
+def test_test_runner_format_failure():
+    """Test test runner failure formatting."""
+    runner = SipTestRunner()
+    result = SipTestResult(
+        success=False,
+        output="Test output",
+        error_output="Error details",
+        return_code=1
+    )
+    
+    formatted = runner.format_test_failure(result)
+    assert "TESTS FAILED" in formatted
+    assert "return code: 1" in formatted
+    assert "Test output" in formatted
+    assert "Error details" in formatted
