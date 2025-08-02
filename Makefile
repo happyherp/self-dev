@@ -54,19 +54,35 @@ qa: ## fix style, sort imports, check types
 	uv run --extra test ruff format .
 	uv run --extra test mypy src/
 
+lint: ## check code style with ruff
+	uv run ruff check src/ tests/
+
+format-check: ## check code formatting with ruff
+	uv run ruff format --check src/ tests/
+
+typecheck: ## check types with mypy
+	uv run mypy src/
+
+test-unit: ## run unit tests with coverage
+	uv run python -m pytest tests/ -v --cov=src/sip --cov-report=xml --cov-report=term
+
+security: ## run security checks
+	@echo "🔒 Running security checks..."
+	@uv run python scripts/security_check.py
+
 ci: ## run all CI checks locally (matches GitHub Actions pipeline)
 	@echo "🔍 Running CI pipeline locally..."
 	@echo "📋 Step 1: Linting with ruff..."
-	uv run ruff check src/ tests/
+	@$(MAKE) lint
 	@echo "✅ Linting passed"
 	@echo "📋 Step 2: Format check with ruff..."
-	uv run ruff format --check src/ tests/
+	@$(MAKE) format-check
 	@echo "✅ Format check passed"
 	@echo "📋 Step 3: Type checking with mypy..."
-	uv run mypy src/
+	@$(MAKE) typecheck
 	@echo "✅ Type checking passed"
 	@echo "📋 Step 4: Running tests with coverage..."
-	uv run python -m pytest tests/ -v --cov=src/sip --cov-report=xml --cov-report=term
+	@$(MAKE) test-unit
 	@echo "✅ All CI checks passed! 🎉"
 
 MAKECMDGOALS ?= .	
@@ -142,7 +158,11 @@ release: dist ## package and upload a release
 build: clean ## builds source and wheel package
 	rm -rf build dist
 	uv build
-	ls -l build dist
+	ls -l dist
+
+build-check: build ## build package and verify contents
+	@echo "🔍 Checking build artifacts..."
+	@uv run python scripts/build_check.py
 
 install: clean ## install the package to the active Python's site-packages
 	python setup.py install
