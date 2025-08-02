@@ -1,0 +1,25 @@
+name: Process Issue with AI
+
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  process:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Install SIP
+        run: pip install -e .
+      
+      - name: Process Issue
+        run: python -m sip process-issue ${{ github.event.issue.number }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}

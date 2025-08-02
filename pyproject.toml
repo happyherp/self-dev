@@ -1,0 +1,69 @@
+[project]
+name = "sip"
+version = "0.1.0"
+description = "A self-improving program that processes GitHub issues with AI"
+readme = "README.md"
+authors = [
+  {name = "happyherp", email = "happyherp@users.noreply.github.com"}
+]
+maintainers = [
+  {name = "happyherp", email = "happyherp@users.noreply.github.com"}
+]
+classifiers = [
+    "Development Status :: 2 - Pre-Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Natural Language :: English",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+license = {text = "MIT"}
+dependencies = [
+    "requests>=2.31.0",
+    "pydantic>=2.0.0",
+    "python-dotenv>=1.0.0",
+    "PyGithub>=1.59.0",
+    "click>=8.0.0",
+]
+requires-python = ">= 3.10"
+
+[project.optional-dependencies]
+test = [
+    "coverage",  # testing
+    "pytest>=7.4.0",  # testing
+    "pytest-mock>=3.11.0",  # mocking for tests
+    "ruff",  # linting
+    "mypy", # type checking
+]
+
+[project.urls]
+bugs = "https://github.com/happyherp/self-dev/issues"
+changelog = "https://github.com/happyherp/self-dev/blob/main/HISTORY.md"
+homepage = "https://github.com/happyherp/self-dev"
+
+[project.scripts]
+sip = "sip.cli:main"
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # Pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "UP",  # pyupgrade
+]
+
+[tool.uv]
+package = true
