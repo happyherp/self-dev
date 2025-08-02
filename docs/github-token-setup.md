@@ -1,6 +1,6 @@
 # GitHub Token Setup for SIP (Self-Improving Program)
 
-This document provides step-by-step instructions for creating a GitHub Personal Access Token (PAT) with the minimal permissions required for the SIP project.
+This document provides step-by-step instructions for creating a **Fine-Grained Personal Access Token** that gives SIP access to only the specific repository you choose.
 
 ## 🎯 **Why You Need This Token**
 
@@ -12,65 +12,42 @@ SIP requires a GitHub token to:
 - Create pull requests with solutions
 - Read repository files for context analysis
 
-## 🔐 **Security Principle: Minimal Permissions**
+## 🔐 **Security: Repository-Specific Access**
 
-This guide follows the **principle of least privilege** - the token will have only the minimum permissions needed for SIP to function, reducing security risk.
+We use **Fine-Grained Personal Access Tokens** which only give access to the specific repository you select, not all your repositories. This follows the principle of least privilege.
 
 ## 📋 **Step-by-Step Token Creation**
 
-### 1. Navigate to GitHub Token Settings
+### 1. Navigate to Fine-Grained Tokens
 1. Go to [GitHub.com](https://github.com) and sign in
 2. Click your profile picture (top-right corner)
 3. Select **Settings** from the dropdown
 4. In the left sidebar, scroll down and click **Developer settings**
 5. Click **Personal access tokens**
-6. Click **Tokens (classic)** *(recommended for SIP)*
+6. Click **Fine-grained tokens**
 
-### 2. Generate New Token
+### 2. Generate Fine-Grained Token
 1. Click **Generate new token**
-2. Select **Generate new token (classic)**
-3. You may be prompted to confirm your password
+2. **Token name**: `SIP - Self-Improving Program`
+3. **Expiration**: 90 days (recommended for security)
+4. **Resource owner**: Select your username
+5. **Repository access**: Select **Selected repositories**
+6. Choose **only** the `self-dev` repository (or your fork)
 
-### 3. Configure Token Settings
+### 3. Configure Repository Permissions
+Select **ONLY** these permissions for the self-dev repository:
 
-#### **Token Name (Note)**
-```
-SIP - Self-Improving Program
-```
+#### ✅ **Repository permissions:**
+- **Contents**: Read and write *(to read/modify files)*
+- **Issues**: Read *(to fetch issue details)*
+- **Metadata**: Read *(to access repository info)*
+- **Pull requests**: Write *(to create PRs)*
 
-#### **Expiration**
-- **Recommended**: 90 days (for security)
-- **Alternative**: No expiration (if you prefer convenience)
+#### ❌ **Do NOT grant:**
+- Actions, Administration, Checks, Deployments, Environments, Pages, etc.
 
-#### **Required Scopes (Permissions)**
-
-Select **ONLY** these scopes - do not select additional permissions:
-
-##### ✅ **repo** (Full control of private repositories)
-- ✅ `repo:status` - Access commit status
-- ✅ `repo_deployment` - Access deployment status  
-- ✅ `public_repo` - Access public repositories
-- ✅ `repo:invite` - Access repository invitations
-- ✅ `security_events` - Read and write security events
-
-*Note: The `repo` scope includes all sub-scopes above. You only need to check the main `repo` checkbox.*
-
-##### ✅ **workflow** (Update GitHub Action workflows)
-- This allows SIP to work with repositories that have GitHub Actions
-
-#### **Scopes NOT Needed (Do NOT select)**
-- ❌ `admin:repo_hook` - SIP doesn't manage webhooks
-- ❌ `admin:org` - SIP doesn't need organization admin rights
-- ❌ `admin:public_key` - SIP doesn't manage SSH keys
-- ❌ `admin:org_hook` - SIP doesn't manage organization webhooks
-- ❌ `gist` - SIP doesn't create gists
-- ❌ `notifications` - SIP doesn't manage notifications
-- ❌ `user` - SIP doesn't need user profile access
-- ❌ `delete_repo` - SIP should never delete repositories
-- ❌ `admin:gpg_key` - SIP doesn't manage GPG keys
-
-### 4. Generate and Save Token
-1. Click **Generate token** at the bottom
+### 4. Generate Token
+1. Click **Generate token**
 2. **IMPORTANT**: Copy the token immediately - you won't see it again!
 3. Store it securely (see storage recommendations below)
 
@@ -161,8 +138,9 @@ You should see SIP successfully fetch the issue without errors.
 
 ### **Integration Tests Failing**
 - Ensure `GITHUB_TOKEN` environment variable is set
-- Verify token has `repo` and `workflow` permissions
+- Verify token has Contents, Issues, Metadata, and Pull requests permissions
 - Check token hasn't expired
+- Ensure token has access to the correct repository
 
 ## 📚 **Additional Resources**
 
@@ -180,4 +158,4 @@ If you encounter issues:
 
 ---
 
-**Remember**: This token gives access to your repositories. Treat it like a password and follow security best practices!
+**Remember**: This fine-grained token only gives access to the specific repository you selected. Treat it like a password and follow security best practices!
