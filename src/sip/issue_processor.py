@@ -14,6 +14,7 @@ from .test_runner import SipTestResult, SipTestRunner
 
 class TestFailureError(Exception):
     """Exception raised when tests fail during solution validation."""
+
     pass
 
 
@@ -62,7 +63,7 @@ class IssueProcessor:
 
             for attempt in range(self.config.max_retry_attempts):
                 self.logger.info(f"Generating solution (attempt {attempt + 1}/{self.config.max_retry_attempts})...")
-                
+
                 try:
                     # Get relevant file contents (recoverable error)
                     file_contents = self._get_relevant_files(repo, analysis.files_to_modify)
@@ -87,7 +88,7 @@ class IssueProcessor:
 
                 except Exception as e:
                     self.logger.warning(f"❌ Attempt {attempt + 1} failed: {str(e)}")
-                    
+
                     # Check if this is an unrecoverable error
                     if self._is_unrecoverable_error(e):
                         return ProcessingResult(
@@ -97,7 +98,7 @@ class IssueProcessor:
                             success=False,
                             error_message=f"Unrecoverable error: {str(e)}",
                         )
-                    
+
                     # Prepare context for next attempt
                     if pull_request:
                         previous_attempt = json.dumps(
@@ -118,7 +119,7 @@ class IssueProcessor:
                             },
                             indent=2,
                         )
-                    
+
                     last_error = str(e)
 
                     if attempt == self.config.max_retry_attempts - 1:
@@ -128,8 +129,7 @@ class IssueProcessor:
                             pull_request=pull_request,
                             success=False,
                             error_message=(
-                                f"Failed after {self.config.max_retry_attempts} attempts. "
-                                f"Last error: {last_error}"
+                                f"Failed after {self.config.max_retry_attempts} attempts. Last error: {last_error}"
                             ),
                         )
 
@@ -266,37 +266,36 @@ class IssueProcessor:
 
     def _is_unrecoverable_error(self, error: Exception) -> bool:
         """Determine if an error is unrecoverable and should not be retried.
-        
+
         Args:
             error: The exception that occurred
-            
+
         Returns:
             True if the error is unrecoverable, False if it should be retried
         """
         error_str = str(error).lower()
-        error_type = type(error).__name__
-        
+
         # Authentication and authorization errors
         if "401" in error_str or "403" in error_str or "unauthorized" in error_str or "forbidden" in error_str:
             return True
-            
+
         # Repository or resource not found
         if "404" in error_str or "not found" in error_str:
             return True
-            
+
         # Invalid model or API configuration
         if "invalid model" in error_str or "model not found" in error_str:
             return True
-            
+
         # Permanent API errors
         if "invalid api key" in error_str or "api key" in error_str and "invalid" in error_str:
             return True
-            
+
         # Configuration errors
-        if isinstance(error, (ValueError, TypeError)) and any(keyword in error_str for keyword in [
-            "config", "configuration", "missing required", "invalid format"
-        ]):
+        if isinstance(error, ValueError | TypeError) and any(
+            keyword in error_str for keyword in ["config", "configuration", "missing required", "invalid format"]
+        ):
             return True
-            
+
         # All other errors are considered recoverable (network issues, temporary API failures, etc.)
         return False

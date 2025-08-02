@@ -363,10 +363,12 @@ class TestEndToEndIntegration:
             # First two attempts fail with recoverable errors, third succeeds
             mock_generate.side_effect = [
                 Exception("Network timeout"),  # Recoverable error
-                Exception("Rate limit exceeded"),  # Recoverable error  
+                Exception("Rate limit exceeded"),  # Recoverable error
                 working_pr,  # Success
             ]
-            mock_test.return_value = SipTestResult(success=True, output="All tests passed", error_output="", return_code=0)
+            mock_test.return_value = SipTestResult(
+                success=True, output="All tests passed", error_output="", return_code=0
+            )
 
             result = processor.process_issue("test/repo", 1)
 
