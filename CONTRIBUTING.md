@@ -2,13 +2,24 @@
 
 Contributions are welcome, and they are greatly appreciated! Every little bit helps, and credit will always be given.
 
+## Design Philosophy
+
+**Before contributing, please understand our core principle: Radical Simplicity.**
+
+- Choose **one approach** over supporting multiple options
+- Prefer **fewer dependencies** over feature completeness
+- Prioritize **less code** over flexibility
+- When in doubt, choose the simpler solution
+
+See [PROJECT.md](PROJECT.md) for detailed philosophy.
+
 You can contribute in many ways:
 
 ## Types of Contributions
 
 ### Report Bugs
 
-Report bugs at https://github.com/happyherp/sip/issues.
+Report bugs at https://github.com/happyherp/self-dev/issues.
 
 If you are reporting a bug, please include:
 
@@ -74,7 +85,7 @@ Ready to contribute? Here's how to set up `sip` for local development.
    make test-all
    ```
 
-   To get flake8 and tox, just pip install them into your virtualenv.
+   All development dependencies are managed through uv and the Makefile.
 
 6. Commit your changes and push your branch to GitHub:
 

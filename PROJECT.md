@@ -6,6 +6,24 @@ SIP is a minimal, GitHub-native autonomous development system that primarily ope
 
 The system is designed to improve itself by working on its own issues, but can also be configured to work on other repositories.
 
+## Design Philosophy: Radical Simplicity
+
+**Essential Principle**: This project must be kept simple above all else.
+
+When faced with choices like "support A or B or both", we choose **one option** unless supporting both genuinely reduces complexity (less code, fewer concepts). Supporting multiple approaches typically adds:
+- More documentation to maintain
+- More code paths to test
+- More decisions for users to make
+- More potential failure modes
+
+We prioritize:
+- **Single, clear path** over multiple options
+- **Fewer dependencies** over feature completeness  
+- **Less code** over flexibility
+- **One way to do it** over accommodating all preferences
+
+This principle applies to everything: package managers, CLI frameworks, deployment methods, configuration formats, etc.
+
 ## How It Works
 
 ```
@@ -79,7 +97,7 @@ The AI can perform two actions:
 # Clone and install
 git clone https://github.com/happyherp/self-dev.git
 cd self-dev
-pip install -e .
+uv pip install -e .
 
 # Configure (defaults to this repository)
 export GITHUB_TOKEN="your_token"
@@ -109,8 +127,10 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: '3.11'
+      - name: Install uv
+        run: curl -LsSf https://astral.sh/uv/install.sh | sh
       - name: Install SIP
-        run: pip install -e .
+        run: uv pip install -e .
       - name: Process Issue
         run: python -m sip process-issue ${{ github.event.issue.number }}
         env:

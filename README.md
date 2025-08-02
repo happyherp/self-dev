@@ -11,6 +11,8 @@ SIP (Self-Improving Program) is an AI-powered system that:
 3. **Generates Solutions**: Creates code changes to address the issue
 4. **Submits Pull Requests**: Opens PRs with the proposed changes for human review
 
+**Design Philosophy**: SIP prioritizes radical simplicity - one clear path over multiple options, fewer dependencies over features, less code over flexibility.
+
 ## Features
 
 - 🤖 **AI-Powered Analysis**: Uses Claude 3.5 Sonnet via OpenRouter for intelligent code analysis
@@ -23,7 +25,7 @@ SIP (Self-Improving Program) is an AI-powered system that:
 
 ### Prerequisites
 - Python 3.10+
-- [uv](https://docs.astral.sh/uv/) (recommended) or pip
+- [uv](https://docs.astral.sh/uv/) - Install with: `curl -LsSf https://astral.sh/uv/install.sh | sh`
 
 ### Installation
 
@@ -34,15 +36,8 @@ SIP (Self-Improving Program) is an AI-powered system that:
    ```
 
 2. **Install SIP**:
-   
-   **With uv (recommended)**:
    ```bash
    uv pip install -e .
-   ```
-   
-   **With pip**:
-   ```bash
-   pip install -e .
    ```
 
 3. **Set up environment variables**:
@@ -57,8 +52,6 @@ SIP (Self-Improving Program) is an AI-powered system that:
    ```
 
 ### Development
-
-For development work, we recommend using `uv` as the project includes `uv`-based development tools:
 
 ```bash
 # Install with test dependencies

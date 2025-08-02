@@ -3,11 +3,9 @@
 ## Prerequisites
 
 - Python 3.10 or higher
-- [uv](https://docs.astral.sh/uv/) (recommended) or pip
+- [uv](https://docs.astral.sh/uv/) - Modern Python package manager
 
 ### Installing uv
-
-If you don't have `uv` installed, you can install it with:
 
 ```sh
 # On macOS and Linux
@@ -15,12 +13,9 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 
 # On Windows
 powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
-
-# Or with pip
-pip install uv
 ```
 
-## From source (Development)
+## Installation
 
 SIP is currently in development and not yet published to PyPI. Install from source:
 
@@ -31,27 +26,13 @@ SIP is currently in development and not yet published to PyPI. Install from sour
    ```
 
 2. **Install SIP**:
-   
-   **With uv (recommended)**:
    ```sh
    uv pip install -e .
    ```
-   
-   **With pip**:
-   ```sh
-   pip install -e .
-   ```
 
 3. **Install with development dependencies**:
-   
-   **With uv**:
    ```sh
    uv pip install -e ".[test]"
-   ```
-   
-   **With pip**:
-   ```sh
-   pip install -e ".[test]"
    ```
 
 ## Environment Setup
