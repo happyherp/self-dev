@@ -1,11 +1,10 @@
 """LLM client for OpenRouter integration."""
 
-import json
-
-import requests
+import instructor
+from openai import OpenAI
 
 from .config import Config
-from .models import AnalysisResult, CodeChange, GitHubIssue, PullRequest
+from .models import AnalysisResult, GitHubIssue, PullRequest
 
 
 class LLMClient:
@@ -13,15 +12,17 @@ class LLMClient:
 
     def __init__(self, config: Config):
         self.config = config
-        self.session = requests.Session()
-        self.session.headers.update(
-            {
-                "Authorization": f"Bearer {config.openrouter_api_key}",
-                "Content-Type": "application/json",
+        # Create OpenAI client configured for OpenRouter
+        openai_client = OpenAI(
+            api_key=config.openrouter_api_key,
+            base_url="https://openrouter.ai/api/v1",
+            default_headers={
                 "HTTP-Referer": "https://github.com/happyherp/self-dev",
                 "X-Title": "SIP - Self-Improving Program",
             }
         )
+        # Patch with instructor for structured outputs
+        self.client = instructor.from_openai(openai_client)
 
     def analyze_issue(self, issue: GitHubIssue, repository_context: str) -> AnalysisResult:
         """Analyze a GitHub issue and determine how to address it."""
@@ -40,35 +41,18 @@ REPOSITORY CONTEXT:
 
 Please analyze this issue and provide:
 1. A brief summary of the problem
-2. The type of problem (bug, feature, documentation, etc.)
+2. The type of problem (bug, feature, documentation, enhancement, or other)
 3. Your suggested approach to solve it
 4. List of files that likely need to be modified
-5. Your confidence level (0.0 to 1.0)
+5. Your confidence level (0.0 to 1.0)"""
 
-Respond in JSON format:
-{{
-    "summary": "Brief summary of the issue",
-    "problem_type": "bug|feature|documentation|enhancement|other",
-    "suggested_approach": "Detailed approach to solve the issue",
-    "files_to_modify": ["file1.py", "file2.py"],
-    "confidence": 0.85
-}}"""
-
-        response = self._call_llm(prompt)
-
-        try:
-            data = json.loads(response)
-            return AnalysisResult(
-                summary=data["summary"],
-                problem_type=data["problem_type"],
-                suggested_approach=data["suggested_approach"],
-                files_to_modify=data["files_to_modify"],
-                confidence=data["confidence"],
-            )
-        except json.JSONDecodeError as e:
-            raise ValueError(f"LLM returned invalid JSON response: {str(e)}\nRaw response: {response}") from e
-        except KeyError as e:
-            raise ValueError(f"LLM response missing required field {str(e)}\nRaw response: {response}") from e
+        return self.client.chat.completions.create(
+            model=self.config.llm_model,
+            response_model=AnalysisResult,
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.1,
+            max_tokens=4000,
+        )
 
     def generate_solution(
         self,
@@ -123,21 +107,6 @@ For each code change, specify:
 - content: The complete new content of the file (for create/modify)
 - description: Brief description of what this change does
 
-Respond in JSON format:
-{{
-    "title": "Fix: Brief description of the fix",
-    "body": "Detailed explanation of changes made...",
-    "branch_name": "sip/issue-{issue.number}-short-description",
-    "changes": [
-        {{
-            "file_path": "path/to/file.py",
-            "change_type": "modify",
-            "content": "complete file content here...",
-            "description": "What this change does"
-        }}
-    ]
-}}
-
 IMPORTANT:
 - Provide complete file content, not just diffs
 - Ensure all changes are consistent and work together
@@ -145,41 +114,10 @@ IMPORTANT:
 - Include proper error handling and logging
 - Add tests if appropriate"""
 
-        response = self._call_llm(prompt)
-
-        try:
-            data = json.loads(response)
-            changes = [
-                CodeChange(
-                    file_path=change["file_path"],
-                    change_type=change["change_type"],
-                    content=change["content"],
-                    description=change["description"],
-                )
-                for change in data["changes"]
-            ]
-
-            return PullRequest(title=data["title"], body=data["body"], branch_name=data["branch_name"], changes=changes)
-        except json.JSONDecodeError as e:
-            raise ValueError(
-                f"LLM returned invalid JSON response for solution: {str(e)}\nRaw response: {response}"
-            ) from e
-        except KeyError as e:
-            raise ValueError(f"LLM solution response missing required field {str(e)}\nRaw response: {response}") from e
-
-    def _call_llm(self, prompt: str) -> str:
-        """Make a call to the LLM via OpenRouter."""
-        url = "https://openrouter.ai/api/v1/chat/completions"
-
-        data = {
-            "model": self.config.llm_model,
-            "messages": [{"role": "user", "content": prompt}],
-            "temperature": 0.1,  # Low temperature for consistent, focused responses
-            "max_tokens": 4000,
-        }
-
-        response = self.session.post(url, json=data)
-        response.raise_for_status()
-
-        result = response.json()
-        return str(result["choices"][0]["message"]["content"])
+        return self.client.chat.completions.create(
+            model=self.config.llm_model,
+            response_model=PullRequest,
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.1,
+            max_tokens=8000,
+        )

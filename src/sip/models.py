@@ -1,10 +1,11 @@
 """Data models for SIP."""
 
-from dataclasses import dataclass
+from typing import Literal
+
+from pydantic import BaseModel, Field, field_validator
 
 
-@dataclass
-class GitHubIssue:
+class GitHubIssue(BaseModel):
     """Represents a GitHub issue."""
 
     number: int
@@ -17,44 +18,48 @@ class GitHubIssue:
     repository: str
 
 
-@dataclass
-class AnalysisResult:
+class AnalysisResult(BaseModel):
     """Result of AI analysis of an issue."""
 
-    summary: str
-    problem_type: str
-    suggested_approach: str
-    files_to_modify: list[str]
-    confidence: float
+    summary: str = Field(description="Brief summary of the issue")
+    problem_type: str = Field(description="Type: bug|feature|documentation|enhancement|other")
+    suggested_approach: str = Field(description="Detailed approach to solve the issue")
+    files_to_modify: list[str] = Field(description="List of files that need modification")
+    confidence: float = Field(ge=0.0, le=1.0, description="Confidence level between 0.0 and 1.0")
+
+    @field_validator('problem_type')
+    @classmethod
+    def validate_problem_type(cls, v):
+        allowed_types = {'bug', 'feature', 'documentation', 'enhancement', 'other'}
+        if v not in allowed_types:
+            raise ValueError(f'problem_type must be one of {allowed_types}')
+        return v
 
 
-@dataclass
-class CodeChange:
+class CodeChange(BaseModel):
     """Represents a code change to be made."""
 
-    file_path: str
-    change_type: str  # 'create', 'modify', 'delete'
-    content: str
-    description: str
+    file_path: str = Field(description="Path to the file to be changed")
+    change_type: Literal['create', 'modify', 'delete'] = Field(description="Type of change: create, modify, or delete")
+    content: str = Field(description="Complete new content of the file (for create/modify)")
+    description: str = Field(description="Brief description of what this change does")
 
 
-@dataclass
-class PullRequest:
+class PullRequest(BaseModel):
     """Represents a pull request to be created."""
 
-    title: str
-    body: str
-    branch_name: str
-    changes: list[CodeChange]
-    base_branch: str = "main"
+    title: str = Field(description="Pull request title")
+    body: str = Field(description="Pull request description")
+    branch_name: str = Field(description="Branch name for the pull request")
+    changes: list[CodeChange] = Field(description="List of code changes to make")
+    base_branch: str = Field(default="main", description="Base branch for the pull request")
 
 
-@dataclass
-class ProcessingResult:
+class ProcessingResult(BaseModel):
     """Result of processing an issue."""
 
-    issue: GitHubIssue | None
-    analysis: AnalysisResult | None
-    pull_request: PullRequest | None
-    success: bool
-    error_message: str | None = None
+    issue: GitHubIssue | None = Field(default=None, description="The processed issue")
+    analysis: AnalysisResult | None = Field(default=None, description="Analysis results")
+    pull_request: PullRequest | None = Field(default=None, description="Generated pull request")
+    success: bool = Field(description="Whether processing was successful")
+    error_message: str | None = Field(default=None, description="Error message if processing failed")
