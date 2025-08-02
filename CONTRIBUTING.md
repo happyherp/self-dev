@@ -4,12 +4,13 @@ Contributions are welcome, and they are greatly appreciated! Every little bit he
 
 ## Design Principles
 
-Please understand our key design principles before contributing:
+Please understand our core mission and principles before contributing:
 
-- **Simplicity First**: Choose one approach over supporting multiple options when possible
+- **AI-Driven Development**: This project enables AI to develop software autonomously - everything serves this goal
+- **Simplicity**: Makes it easier for AI to understand and modify code; ensures consistent environments
+- **Test-Driven**: Comprehensive testing is critical since we rely on automated validation more than traditional projects
 - **GitHub-Native**: Built specifically for GitHub workflows and integration
-- **AI-Powered**: Leverage LLMs for intelligent analysis and code generation
-- **Human-in-the-Loop**: All changes require human review and approval
+- **Minimal Human Oversight**: Currently humans gate merges, but the goal is eventual full autonomy
 
 See [PROJECT.md](PROJECT.md) for detailed principles.
 

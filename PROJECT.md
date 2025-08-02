@@ -8,17 +8,20 @@ The system is designed to improve itself by working on its own issues, but can a
 
 ## Design Principles
 
-### Simplicity First
-When faced with choices like "support A or B or both", we choose **one option** unless supporting both genuinely reduces complexity. Supporting multiple approaches typically adds maintenance burden, documentation overhead, and user confusion.
+### AI-Driven Software Development
+This project is fundamentally about enabling AI to develop software autonomously. Everything else serves this primary goal.
+
+### Simplicity
+Makes it easier for AI to understand, modify, and extend the codebase. Ensures consistent runtime conditions between AI sandbox, CI tests, and human development environments - essential for reliable self-development.
+
+### Test-Driven Development
+Automatic tests are critical since we rely on them far more than traditional projects. We develop test-first when possible and prioritize integration and end-to-end tests, even when they're challenging to implement.
 
 ### GitHub-Native
-Built specifically for GitHub workflows - issues, pull requests, and Actions integration.
+Built specifically for GitHub workflows - issues, pull requests, and Actions integration provide the natural interface for AI-driven development.
 
-### AI-Powered
-Leverages modern LLMs for intelligent code analysis and generation.
-
-### Human-in-the-Loop
-All changes require human review and approval before merging.
+### Minimal Human Oversight
+Currently humans gate merges to main, but the long-term goal is full autonomy. We minimize human intervention points to eventually achieve complete AI-driven development cycles.
 
 ## How It Works
 
