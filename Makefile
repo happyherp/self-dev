@@ -82,11 +82,11 @@ MAKECMDGOALS ?= .
 
 test:  ## Run all the tests, but allow for arguments to be passed
 	@echo "Running with arg: $(filter-out $@,$(MAKECMDGOALS))"
-	pytest $(filter-out $@,$(MAKECMDGOALS))
+	uv run --extra test pytest $(filter-out $@,$(MAKECMDGOALS))
 
 pdb:  ## Run all the tests, but on failure, drop into the debugger
 	@echo "Running with arg: $(filter-out $@,$(MAKECMDGOALS))"
-	pytest --pdb --maxfail=10 --pdbcls=IPython.terminal.debugger:TerminalPdb $(filter-out $@,$(MAKECMDGOALS))
+	uv run --extra test pytest --pdb --maxfail=10 --pdbcls=IPython.terminal.debugger:TerminalPdb $(filter-out $@,$(MAKECMDGOALS))
 
 test-all: ## run tests on every Python version with uv
 	uv run --python=3.10 --extra test pytest
