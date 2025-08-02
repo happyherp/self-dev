@@ -65,15 +65,10 @@ Respond in JSON format:
                 files_to_modify=data["files_to_modify"],
                 confidence=data["confidence"],
             )
-        except (json.JSONDecodeError, KeyError) as e:
-            # Fallback if JSON parsing fails
-            return AnalysisResult(
-                summary=f"Failed to parse analysis: {str(e)}",
-                problem_type="other",
-                suggested_approach="Manual review required",
-                files_to_modify=[],
-                confidence=0.0,
-            )
+        except json.JSONDecodeError as e:
+            raise ValueError(f"LLM returned invalid JSON response: {str(e)}\nRaw response: {response}") from e
+        except KeyError as e:
+            raise ValueError(f"LLM response missing required field {str(e)}\nRaw response: {response}") from e
 
     def generate_solution(
         self,
@@ -165,14 +160,12 @@ IMPORTANT:
             ]
 
             return PullRequest(title=data["title"], body=data["body"], branch_name=data["branch_name"], changes=changes)
-        except (json.JSONDecodeError, KeyError) as e:
-            # Fallback if JSON parsing fails
-            return PullRequest(
-                title=f"SIP: Address issue #{issue.number}",
-                body=f"Automated attempt to address: {issue.title}\n\nError generating solution: {str(e)}",
-                branch_name=f"sip/issue-{issue.number}-auto",
-                changes=[],
-            )
+        except json.JSONDecodeError as e:
+            raise ValueError(
+                f"LLM returned invalid JSON response for solution: {str(e)}\nRaw response: {response}"
+            ) from e
+        except KeyError as e:
+            raise ValueError(f"LLM solution response missing required field {str(e)}\nRaw response: {response}") from e
 
     def _call_llm(self, prompt: str) -> str:
         """Make a call to the LLM via OpenRouter."""

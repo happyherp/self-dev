@@ -23,6 +23,31 @@ Built specifically for GitHub workflows - issues, pull requests, and Actions int
 ### Minimal Human Oversight
 Currently humans gate merges to main, but the long-term goal is full autonomy. We minimize human intervention points to eventually achieve complete AI-driven development cycles.
 
+### Fail-Fast Error Handling
+**CRITICAL ANTIPATTERN TO AVOID**: Never swallow errors and return fake/default data. This masks real issues and makes debugging impossible.
+
+❌ **BAD - Swallowing errors:**
+```python
+try:
+    data = json.loads(response)
+    return data["result"]
+except Exception:
+    return "default_value"  # Hides the real problem!
+```
+
+✅ **GOOD - Fail fast with clear errors:**
+```python
+try:
+    data = json.loads(response)
+    return data["result"]
+except json.JSONDecodeError as e:
+    raise ValueError(f"Invalid JSON response: {e}\nRaw: {response}")
+except KeyError as e:
+    raise ValueError(f"Missing field {e} in response: {response}")
+```
+
+This is especially critical for a self-improving system that needs to diagnose and fix its own issues. Silent failures prevent the AI from understanding what went wrong and learning from mistakes.
+
 ## How It Works
 
 ```
