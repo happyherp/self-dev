@@ -1,8 +1,25 @@
 #!/usr/bin/env python
 """Tests for SIP."""
 
+import re
+from pathlib import Path
+
+import tomllib
+
+from sip import __version__
 from sip.config import Config
 from sip.test_runner import SipTestResult, SipTestRunner
+
+
+def test_version():
+    """Test version consistency between pyproject.toml and package."""
+    pyproject_path = Path(__file__).parent.parent / "pyproject.toml"
+    with open(pyproject_path, "rb") as f:
+        pyproject_data = tomllib.load(f)
+    pyproject_version = pyproject_data["project"]["version"]
+
+    assert __version__ == pyproject_version
+    assert re.match(r"^\d+\.\d+\.\d+$", __version__) is not None
 
 
 def test_config_creation():
