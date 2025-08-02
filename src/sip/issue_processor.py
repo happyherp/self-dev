@@ -8,7 +8,7 @@ from pathlib import Path
 from .config import Config
 from .github_client import GitHubClient
 from .llm_client import LLMClient
-from .models import ProcessingResult
+from .models import ProcessingResult, PullRequest
 from .test_runner import SipTestResult, SipTestRunner
 
 
@@ -54,7 +54,7 @@ class IssueProcessor:
             file_contents = self._get_relevant_files(repo, analysis.files_to_modify)
 
             # 6. Generate solution with retry logic
-            pull_request = None
+            pull_request: PullRequest | None = None
             previous_attempt = None
             test_failure = None
 
@@ -114,6 +114,16 @@ class IssueProcessor:
                                 f"Last failure: {test_failure}"
                             ),
                         )
+
+            # Ensure we have a valid pull request after the retry loop
+            if pull_request is None:
+                return ProcessingResult(
+                    issue=issue,
+                    analysis=analysis,
+                    pull_request=None,
+                    success=False,
+                    error_message="Failed to generate a valid solution after all retry attempts",
+                )
 
             # 8. Create branch and commit changes (tests passed)
             self.logger.info(f"Creating branch: {pull_request.branch_name}")
@@ -190,7 +200,7 @@ class IssueProcessor:
 
         return file_contents
 
-    def _test_solution_in_temp_repo(self, repo: str, pull_request) -> SipTestResult:
+    def _test_solution_in_temp_repo(self, repo: str, pull_request: PullRequest) -> SipTestResult:
         """Test the solution in a temporary repository clone."""
 
         with tempfile.TemporaryDirectory() as temp_dir:

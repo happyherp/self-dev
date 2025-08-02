@@ -54,6 +54,21 @@ qa: ## fix style, sort imports, check types
 	uv run --extra test ruff format .
 	uv run --extra test mypy src/
 
+ci: ## run all CI checks locally (matches GitHub Actions pipeline)
+	@echo "🔍 Running CI pipeline locally..."
+	@echo "📋 Step 1: Linting with ruff..."
+	uv run ruff check src/ tests/
+	@echo "✅ Linting passed"
+	@echo "📋 Step 2: Format check with ruff..."
+	uv run ruff format --check src/ tests/
+	@echo "✅ Format check passed"
+	@echo "📋 Step 3: Type checking with mypy..."
+	uv run mypy src/
+	@echo "✅ Type checking passed"
+	@echo "📋 Step 4: Running tests with coverage..."
+	uv run python -m pytest tests/ -v --cov=src/sip --cov-report=xml --cov-report=term
+	@echo "✅ All CI checks passed! 🎉"
+
 MAKECMDGOALS ?= .	
 
 test:  ## Run all the tests, but allow for arguments to be passed
