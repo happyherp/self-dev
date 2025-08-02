@@ -323,3 +323,104 @@ class TestEndToEndIntegration:
             assert result.success is True
             assert result.pull_request == working_pr
             assert mock_test.call_count == 2  # Called twice due to retry
+
+    def test_workflow_with_recoverable_errors_and_retry(self):
+        """Test workflow with recoverable errors that count towards retry limit."""
+        config = Config(github_token="test_token", openrouter_api_key="test_key", max_retry_attempts=3)
+        processor = IssueProcessor(config)
+
+        mock_issue = create_test_issue(title="Test Issue", body="Fix this bug")
+        mock_analysis = AnalysisResult(
+            summary="Test issue analysis",
+            problem_type="bug",
+            suggested_approach="Fix the bug",
+            files_to_modify=["test.py"],
+            confidence=0.8,
+        )
+
+        working_pr = PullRequest(
+            title="Fix: Test Issue (working)",
+            body="This works",
+            branch_name="sip/issue-1-test",
+            changes=[
+                CodeChange(
+                    file_path="test.py", change_type="modify", content="print('working')", description="Working fix"
+                )
+            ],
+        )
+
+        with (
+            patch.object(processor.github, "get_issue", return_value=mock_issue),
+            patch.object(processor, "_get_repository_context", return_value="repo context"),
+            patch.object(processor.llm, "analyze_issue", return_value=mock_analysis),
+            patch.object(processor, "_get_relevant_files", return_value={"test.py": "print('old')"}),
+            patch.object(processor.llm, "generate_solution") as mock_generate,
+            patch.object(processor, "_test_solution_in_temp_repo") as mock_test,
+            patch.object(processor.github, "create_branch"),
+            patch.object(processor.github, "commit_changes"),
+            patch.object(processor.github, "create_pull_request", return_value="https://github.com/test/repo/pull/1"),
+        ):
+            # First two attempts fail with recoverable errors, third succeeds
+            mock_generate.side_effect = [
+                Exception("Network timeout"),  # Recoverable error
+                Exception("Rate limit exceeded"),  # Recoverable error
+                working_pr,  # Success
+            ]
+            mock_test.return_value = SipTestResult(
+                success=True, output="All tests passed", error_output="", return_code=0
+            )
+
+            result = processor.process_issue("test/repo", 1)
+
+            assert result.success is True
+            assert result.pull_request == working_pr
+            assert mock_generate.call_count == 3  # Called three times due to retries
+
+    def test_workflow_with_unrecoverable_error_no_retry(self):
+        """Test workflow with unrecoverable error that doesn't retry."""
+        config = Config(github_token="test_token", openrouter_api_key="test_key", max_retry_attempts=3)
+        processor = IssueProcessor(config)
+
+        mock_issue = create_test_issue(title="Test Issue", body="Fix this bug")
+        mock_analysis = AnalysisResult(
+            summary="Test issue analysis",
+            problem_type="bug",
+            suggested_approach="Fix the bug",
+            files_to_modify=["test.py"],
+            confidence=0.8,
+        )
+
+        with (
+            patch.object(processor.github, "get_issue", return_value=mock_issue),
+            patch.object(processor, "_get_repository_context", return_value="repo context"),
+            patch.object(processor.llm, "analyze_issue", return_value=mock_analysis),
+            patch.object(processor, "_get_relevant_files", return_value={"test.py": "print('old')"}),
+            patch.object(processor.llm, "generate_solution") as mock_generate,
+        ):
+            # First attempt fails with unrecoverable error
+            mock_generate.side_effect = Exception("401 Unauthorized")  # Unrecoverable error
+
+            result = processor.process_issue("test/repo", 1)
+
+            assert result.success is False
+            assert "Unrecoverable error: 401 Unauthorized" in result.error_message
+            assert mock_generate.call_count == 1  # Called only once, no retries
+
+    def test_is_unrecoverable_error_classification(self):
+        """Test the error classification logic."""
+        config = Config(github_token="test_token", openrouter_api_key="test_key")
+        processor = IssueProcessor(config)
+
+        # Test unrecoverable errors
+        assert processor._is_unrecoverable_error(Exception("401 Unauthorized")) is True
+        assert processor._is_unrecoverable_error(Exception("403 Forbidden")) is True
+        assert processor._is_unrecoverable_error(Exception("404 Not Found")) is True
+        assert processor._is_unrecoverable_error(Exception("Invalid API key")) is True
+        assert processor._is_unrecoverable_error(Exception("Invalid model specified")) is True
+        assert processor._is_unrecoverable_error(ValueError("Missing required config")) is True
+
+        # Test recoverable errors
+        assert processor._is_unrecoverable_error(Exception("Network timeout")) is False
+        assert processor._is_unrecoverable_error(Exception("Rate limit exceeded")) is False
+        assert processor._is_unrecoverable_error(Exception("Temporary server error")) is False
+        assert processor._is_unrecoverable_error(ValueError("No changes generated")) is False

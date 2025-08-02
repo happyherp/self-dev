@@ -7,7 +7,7 @@ import os
 
 def check_file(filepath: str) -> None:
     """Check a Python file for common security issues."""
-    with open(filepath, 'r') as f:
+    with open(filepath) as f:
         try:
             tree = ast.parse(f.read())
             for node in ast.walk(tree):
@@ -32,7 +32,7 @@ def main() -> None:
         for file in files:
             if file.endswith('.py'):
                 check_file(os.path.join(root, file))
-    
+
     print('✅ Security check completed')
 
 
