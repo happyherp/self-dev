@@ -85,9 +85,26 @@ test-all: ## run tests on every Python version with uv
 	uv run --python=3.12 --extra test pytest
 	uv run --python=3.13 --extra test pytest
 
-test-integration: ## run integration tests with live API tokens
+test-integration: ## run integration tests with live API tokens (fails if secrets missing)
 	@echo "🧪 Running integration tests with live API tokens..."
-	@# Skip integration tests if secrets are not available
+	@# Fail if secrets are not available
+	@if [ -z "$$AGENT_GITHUB_TOKEN" ] || [ -z "$$OPENROUTER_API_KEY" ]; then \
+		echo "❌ Integration tests failed: secrets not available"; \
+		echo "Set AGENT_GITHUB_TOKEN and OPENROUTER_API_KEY environment variables to run integration tests"; \
+		exit 1; \
+	fi
+	@echo "Testing CLI help command..."
+	@uv run python -m sip --help > /dev/null
+	@echo "✅ CLI help works"
+	@echo "Testing config loading..."
+	@uv run python -c "from sip.config import Config; config = Config.from_env(); print(f'✅ Config loaded for repository: {config.default_repository}')"
+	@echo "Testing GitHub API connectivity..."
+	@uv run python -c "from sip.github_client import GitHubClient; from sip.config import Config; config = Config.from_env(); client = GitHubClient(config.github_token); repo_info = client.get_repository(config.default_repository); print(f'✅ GitHub API connected - Repository: {repo_info[\"full_name\"]}'); print(f'✅ Repository description: {repo_info.get(\"description\", \"No description\")}')";
+	@echo "✅ All integration tests passed!"
+
+test-integration-optional: ## run integration tests with live API tokens (skips if secrets missing)
+	@echo "🧪 Running integration tests with live API tokens..."
+	@# Skip gracefully if secrets are not available (for local development)
 	@if [ -z "$$AGENT_GITHUB_TOKEN" ] || [ -z "$$OPENROUTER_API_KEY" ]; then \
 		echo "⚠️ Skipping integration tests (secrets not available)"; \
 		echo "Set AGENT_GITHUB_TOKEN and OPENROUTER_API_KEY environment variables to run integration tests"; \
