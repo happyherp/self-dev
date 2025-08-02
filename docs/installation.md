@@ -39,7 +39,9 @@ SIP is currently in development and not yet published to PyPI. Install from sour
 
 SIP requires API keys to function:
 
-1. **GitHub Token**: Create a personal access token at https://github.com/settings/tokens
+1. **GitHub Token**: Create a personal access token with minimal required permissions
+   - 📋 **[Complete Setup Guide](./github-token-setup.md)** - Follow this for secure token creation
+   - 🔗 Quick link: https://github.com/settings/tokens
 2. **OpenRouter API Key**: Get an API key from https://openrouter.ai/
 
 ### For Local Development
@@ -72,6 +74,7 @@ OPENROUTER_API_KEY=your_openrouter_key_here
 
 ## Verification
 
+### Basic Installation
 Verify the installation by running:
 
 ```sh
@@ -79,3 +82,35 @@ uv run sip --help
 ```
 
 You should see the SIP command-line interface help message.
+
+### GitHub Integration
+To verify your GitHub token works correctly:
+
+```sh
+# Set your token (see GitHub Token Setup guide)
+export GITHUB_TOKEN="your_token_here"
+
+# Test GitHub access
+uv run python -c "
+import os
+from src.sip.github_client import GitHubClient
+from src.sip.config import Config
+
+config = Config.from_env()
+client = GitHubClient(config.github_token)
+print('✅ GitHub token works!')
+"
+```
+
+### Integration Tests
+To run the full integration test suite (requires GitHub token):
+
+```sh
+# Ensure GITHUB_TOKEN is set
+export GITHUB_TOKEN="your_token_here"
+
+# Run integration tests
+uv run python -m pytest tests/test_integration.py -v
+```
+
+**Note**: Integration tests will be skipped in CI if `GITHUB_TOKEN` is not available.

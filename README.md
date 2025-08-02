@@ -67,6 +67,7 @@ make qa
 ## Documentation
 
 - [Installation Guide](docs/installation.md)
+- [GitHub Token Setup](docs/github-token-setup.md) - **Required for GitHub integration**
 - [Usage Instructions](docs/usage.md)
 - [Project Overview](PROJECT.md)
 - [Original Idea](idea.md)
