@@ -99,7 +99,7 @@ test-integration: ## run integration tests with live API tokens (fails if secret
 	@echo "Testing config loading..."
 	@uv run python -c "from sip.config import Config; config = Config.from_env(); print(f'✅ Config loaded for repository: {config.default_repository}')"
 	@echo "Testing GitHub API connectivity..."
-	@uv run python -c "from sip.github_client import GitHubClient; from sip.config import Config; config = Config.from_env(); client = GitHubClient(config.github_token); repo_info = client.get_repository(config.default_repository); print(f'✅ GitHub API connected - Repository: {repo_info[\"full_name\"]}'); print(f'✅ Repository description: {repo_info.get(\"description\", \"No description\")}')";
+	@uv run python -c "from sip.github_client import GitHubClient; from sip.config import Config; config = Config.from_env(); client = GitHubClient(config); repo_info = client.get_repository(config.default_repository); print(f'✅ GitHub API connected - Repository: {repo_info[\"full_name\"]}'); print(f'✅ Repository description: {repo_info.get(\"description\", \"No description\")}')";
 	@echo "✅ All integration tests passed!"
 
 test-integration-optional: ## run integration tests with live API tokens (skips if secrets missing)
@@ -115,7 +115,7 @@ test-integration-optional: ## run integration tests with live API tokens (skips 
 		echo "Testing config loading..."; \
 		uv run python -c "from sip.config import Config; config = Config.from_env(); print(f'✅ Config loaded for repository: {config.default_repository}')"; \
 		echo "Testing GitHub API connectivity..."; \
-		uv run python -c "from sip.github_client import GitHubClient; from sip.config import Config; config = Config.from_env(); client = GitHubClient(config.github_token); repo_info = client.get_repository(config.default_repository); print(f'✅ GitHub API connected - Repository: {repo_info[\"full_name\"]}'); print(f'✅ Repository description: {repo_info.get(\"description\", \"No description\")}')"; \
+		uv run python -c "from sip.github_client import GitHubClient; from sip.config import Config; config = Config.from_env(); client = GitHubClient(config); repo_info = client.get_repository(config.default_repository); print(f'✅ GitHub API connected - Repository: {repo_info[\"full_name\"]}'); print(f'✅ Repository description: {repo_info.get(\"description\", \"No description\")}')"; \
 		echo "✅ All integration tests passed!"; \
 	fi
 
