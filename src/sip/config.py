@@ -1,4 +1,13 @@
-"""Configuration management for SIP."""
+"""Configuration management for SIP.
+
+This module provides the Config dataclass for managing SIP configuration settings,
+including GitHub API tokens, OpenRouter API keys, repository settings, and various
+operational limits like file sizes and retry attempts.
+
+The configuration can be loaded from environment variables using the from_env()
+class method, which validates required settings and provides sensible defaults
+for optional parameters.
+"""
 
 import os
 from dataclasses import dataclass
