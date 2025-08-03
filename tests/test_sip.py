@@ -34,7 +34,7 @@ def test_config_creation():
 def test_test_runner_initialization():
     """Test test runner can be initialized."""
     runner = SipTestRunner()
-    assert runner.test_command == ["python", "-m", "pytest", "-v"]
+    assert runner.test_command == ["make", "ci"]
 
 
 def test_test_runner_custom_command():
