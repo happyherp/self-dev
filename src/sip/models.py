@@ -63,3 +63,14 @@ class ProcessingResult(BaseModel):
     pull_request: PullRequest | None = Field(default=None, description="Generated pull request")
     success: bool = Field(description="Whether processing was successful")
     error_message: str | None = Field(default=None, description="Error message if processing failed")
+
+
+class LiveSessionState(BaseModel):
+    """State data for live programming session."""
+    
+    modifications: list[dict] = Field(default=[], description="History of modifications made")
+    current_version: int = Field(default=1, description="Current version of the program")
+    backup_path: str | None = Field(default=None, description="Path to current backup")
+    last_meta_request: str | None = Field(default=None, description="Last meta-programming request")
+    pending_changes: PullRequest | None = Field(default=None, description="Pending changes to apply")
+    session_start_time: float = Field(description="Session start timestamp")
