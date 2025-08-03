@@ -7,6 +7,7 @@ import click
 
 from .config import Config
 from .issue_processor import IssueProcessor
+from .live_session import LiveSession
 
 
 @click.group()
@@ -48,6 +49,31 @@ def process_issue(issue_number: int, repo: str | None = None) -> None:
     except Exception as e:
         click.echo(f"💥 Fatal error: {str(e)}")
         logging.exception("Fatal error in process_issue")
+        sys.exit(1)
+
+
+@main.command()
+@click.option("--repo", help="Repository in format owner/repo (defaults to happyherp/self-dev)")
+def live_session(repo: str | None = None) -> None:
+    """Start live CLI session with self-modification capabilities."""
+    try:
+        # Load configuration
+        config = Config.from_env()
+        
+        # Use provided repo or default
+        target_repo = repo or config.default_repository
+        
+        click.echo("🚀 Starting SIP Live Session - Meta-Programming Mode")
+        click.echo("Type /help for available commands, /quit to exit")
+        click.echo(f"Repository: {target_repo}")
+        
+        # Start live session
+        session = LiveSession(config, target_repo)
+        session.run()
+        
+    except Exception as e:
+        click.echo(f"💥 Fatal error in live session: {str(e)}")
+        logging.exception("Fatal error in live_session")
         sys.exit(1)
 
 
