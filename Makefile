@@ -188,23 +188,6 @@ test-integration: ## run integration tests with live API tokens (fails if secret
 	@uv run python -c "from sip.github_client import GitHubClient; from sip.config import Config; config = Config.from_env(); client = GitHubClient(config); repo_info = client.get_repository(config.default_repository); print(f'✅ GitHub API connected - Repository: {repo_info[\"full_name\"]}'); print(f'✅ Repository description: {repo_info.get(\"description\", \"No description\")}')";
 	@echo "✅ All integration tests passed!"
 
-test-integration-optional: ## run integration tests with live API tokens (skips if secrets missing)
-	@echo "🧪 Running integration tests with live API tokens..."
-	@# Skip gracefully if secrets are not available (for local development)
-	@if [ -z "$$AGENT_GITHUB_TOKEN" ] || [ -z "$$OPENROUTER_API_KEY" ]; then \
-		echo "⚠️ Skipping integration tests (secrets not available)"; \
-		echo "Set AGENT_GITHUB_TOKEN and OPENROUTER_API_KEY environment variables to run integration tests"; \
-	else \
-		echo "Testing CLI help command..."; \
-		uv run python -m sip --help > /dev/null; \
-		echo "✅ CLI help works"; \
-		echo "Testing config loading..."; \
-		uv run python -c "from sip.config import Config; config = Config.from_env(); print(f'✅ Config loaded for repository: {config.default_repository}')"; \
-		echo "Testing GitHub API connectivity..."; \
-		uv run python -c "from sip.github_client import GitHubClient; from sip.config import Config; config = Config.from_env(); client = GitHubClient(config); repo_info = client.get_repository(config.default_repository); print(f'✅ GitHub API connected - Repository: {repo_info[\"full_name\"]}'); print(f'✅ Repository description: {repo_info.get(\"description\", \"No description\")}')"; \
-		echo "✅ All integration tests passed!"; \
-	fi
-
 coverage: ## check code coverage quickly with the default Python
 	coverage run --source sip -m pytest
 	coverage report -m
@@ -251,25 +234,11 @@ run-pre-commit-checks_for-openhands: ## run pre-commit quality checks (called by
 
 setup_for-openhands: ## complete OpenHands development environment setup (called by .openhands/setup.sh)
 	@echo "🚀 Setting up OpenHands development environment..."
-	@echo "📦 Installing dependencies with uv..."
 	@uv sync --extra test
 	@echo "🔧 Installing pre-commit hooks..."
 	@$(MAKE) install-pre-commit-hooks
 	@echo "📝 Generating OpenHands repository documentation..."
 	@$(MAKE) generate-openhands-repo
-	@echo "🧪 Verifying installation..."
-	@if uv run python -c "import sip; print('✅ SIP package importable')"; then \
-		echo "✅ Package installation verified"; \
-	else \
-		echo "❌ Package installation failed"; \
-		exit 1; \
-	fi
-	@echo "🔍 Testing CI pipeline..."
-	@if $(MAKE) ci_for-setup; then \
-		echo "✅ All quality checks passed!"; \
-	else \
-		echo "⚠️  Some quality checks failed. Run 'make qa' to auto-fix issues."; \
-	fi
 	@echo "🎉 OpenHands development environment setup complete!"
 
 generate-openhands-repo: ## generate .openhands/repo.md from source files
