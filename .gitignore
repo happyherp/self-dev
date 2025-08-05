@@ -207,4 +207,4 @@ marimo/_lsp/
 __marimo__/
 
 # Generated OpenHands files
-.openhands/repo.md
+# Note: .openhands/repo.md is now committed to git and maintained via CI/pre-commit
