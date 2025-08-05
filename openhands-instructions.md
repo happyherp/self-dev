@@ -5,7 +5,7 @@ This document contains specific instructions for OpenHands (AI agents) working o
 ## Critical Development Rules for AI Agents
 
 ### Mandatory Quality Checks
-**ALWAYS run `make agent-check-code` before committing**. This command:
+**ALWAYS run `make agent-check-code_for-ai-agents` before committing**. This command:
 1. Auto-fixes linting and formatting issues
 2. Runs the full CI pipeline to ensure quality
 
@@ -102,7 +102,7 @@ Silent failures prevent the AI from understanding what went wrong and learning f
 
 ## Best Practices for AI Agents
 
-1. **Always run `make agent-check-code` before committing**
+1. **Always run `make agent-check-code_for-ai-agents` before committing**
 2. Use descriptive commit messages
 3. Keep commits focused and atomic
 4. Write tests for new functionality
@@ -112,6 +112,6 @@ Silent failures prevent the AI from understanding what went wrong and learning f
 ## Available Automation
 
 - `.openhands/setup.sh` - Development environment setup
-- `make agent-check-code` - AI-optimized quality pipeline
+- `make agent-check-code_for-ai-agents` - AI-optimized quality pipeline
 - Pre-commit hooks - Automatic quality checks
 - GitHub Actions - Automated CI/CD

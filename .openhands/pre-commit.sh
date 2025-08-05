@@ -23,4 +23,4 @@ fi
 echo "📁 Working in: $PROJECT_ROOT"
 
 # Call the make target that does the actual work
-make run-pre-commit-checks
+make run-pre-commit-checks_for-openhands

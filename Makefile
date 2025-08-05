@@ -66,11 +66,14 @@ auto-fix: ## automatically fix all fixable linting and formatting issues
 	@uv run --extra test ruff format src/ tests/
 	@echo "✅ Auto-fix complete"
 
-agent-check-code: ## auto-fix issues then run CI checks (for AI agents)
+agent-check-code_for-ai-agents: ## auto-fix issues then run CI checks (called by AI agents)
 	@echo "🤖 Agent code check: auto-fixing then validating..."
 	@$(MAKE) auto-fix
 	@echo "🔍 Running CI validation..."
-	@$(MAKE) ci
+	@$(MAKE) ci_for-developers
+
+# Legacy alias for backwards compatibility  
+agent-check-code: agent-check-code_for-ai-agents ## alias for agent-check-code_for-ai-agents (backwards compatibility)
 
 lint: ## check code style with ruff
 	uv run ruff check src/ tests/
@@ -94,7 +97,25 @@ security: ## run security checks
 	@echo "🔒 Running security checks..."
 	@uv run python scripts/security_check.py
 
-ci: ## run all CI checks locally (matches GitHub Actions pipeline)
+ci_for-github-actions: ## run all CI checks (called by GitHub Actions)
+	@echo "🔍 Running CI pipeline for GitHub Actions..."
+	@echo "📋 Step 1: Generating OpenHands repo documentation..."
+	@$(MAKE) generate-openhands-repo
+	@echo "✅ OpenHands repo documentation generated"
+	@echo "📋 Step 2: Linting with ruff..."
+	@$(MAKE) lint
+	@echo "✅ Linting passed"
+	@echo "📋 Step 3: Format check with ruff..."
+	@$(MAKE) format-check
+	@echo "✅ Format check passed"
+	@echo "📋 Step 4: Type checking with mypy..."
+	@$(MAKE) typecheck
+	@echo "✅ Type checking passed"
+	@echo "📋 Step 5: Running tests with coverage..."
+	@$(MAKE) test-unit
+	@echo "✅ All CI checks passed! 🎉"
+
+ci_for-developers: ## run all CI checks locally (called by developers)
 	@echo "🔍 Running CI pipeline locally..."
 	@echo "📋 Step 1: Generating OpenHands repo documentation..."
 	@$(MAKE) generate-openhands-repo
@@ -111,6 +132,27 @@ ci: ## run all CI checks locally (matches GitHub Actions pipeline)
 	@echo "📋 Step 5: Running tests with coverage..."
 	@$(MAKE) test-unit
 	@echo "✅ All CI checks passed! 🎉"
+
+ci_for-setup: ## run all CI checks during setup (called internally by setup targets)
+	@echo "🔍 Running CI pipeline for setup verification..."
+	@echo "📋 Step 1: Generating OpenHands repo documentation..."
+	@$(MAKE) generate-openhands-repo
+	@echo "✅ OpenHands repo documentation generated"
+	@echo "📋 Step 2: Linting with ruff..."
+	@$(MAKE) lint
+	@echo "✅ Linting passed"
+	@echo "📋 Step 3: Format check with ruff..."
+	@$(MAKE) format-check
+	@echo "✅ Format check passed"
+	@echo "📋 Step 4: Type checking with mypy..."
+	@$(MAKE) typecheck
+	@echo "✅ Type checking passed"
+	@echo "📋 Step 5: Running tests with coverage..."
+	@$(MAKE) test-unit
+	@echo "✅ All CI checks passed! 🎉"
+
+# Legacy alias for backwards compatibility
+ci: ci_for-developers ## alias for ci_for-developers (backwards compatibility)
 
 MAKECMDGOALS ?= .	
 
@@ -197,13 +239,16 @@ install: clean ## install the package to the active Python's site-packages
 install-pre-commit-hooks: ## install pre-commit hooks for quality checks
 	@mkdir -p .git/hooks
 	@echo '#!/bin/bash' > .git/hooks/pre-commit
-	@echo 'make run-pre-commit-checks' >> .git/hooks/pre-commit
+	@echo 'make run-pre-commit-checks_for-git-hooks' >> .git/hooks/pre-commit
 	@chmod +x .git/hooks/pre-commit
 
-run-pre-commit-checks: ## run pre-commit quality checks (used by git hook)
-	@git diff --cached --quiet || $(MAKE) ci
+run-pre-commit-checks_for-git-hooks: ## run pre-commit quality checks (called by git pre-commit hooks)
+	@git diff --cached --quiet || $(MAKE) ci_for-developers
 
-setup-openhands: ## complete OpenHands development environment setup
+run-pre-commit-checks_for-openhands: ## run pre-commit quality checks (called by .openhands/pre-commit.sh)
+	@git diff --cached --quiet || $(MAKE) ci_for-developers
+
+setup_for-openhands: ## complete OpenHands development environment setup (called by .openhands/setup.sh)
 	@echo "🚀 Setting up OpenHands development environment..."
 	@echo "📦 Installing dependencies with uv..."
 	@uv sync --extra test
@@ -219,7 +264,7 @@ setup-openhands: ## complete OpenHands development environment setup
 		exit 1; \
 	fi
 	@echo "🔍 Testing CI pipeline..."
-	@if $(MAKE) ci; then \
+	@if $(MAKE) ci_for-setup; then \
 		echo "✅ All quality checks passed!"; \
 	else \
 		echo "⚠️  Some quality checks failed. Run 'make qa' to auto-fix issues."; \

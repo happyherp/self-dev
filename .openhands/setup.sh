@@ -18,4 +18,4 @@ if ! command -v uv &> /dev/null; then
 fi
 
 # Use the make target for complete setup
-make setup-openhands
+make setup_for-openhands
