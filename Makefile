@@ -24,6 +24,23 @@ export PRINT_HELP_PYSCRIPT
 
 BROWSER := python -c "$$BROWSER_PYSCRIPT"
 
+# NAMING CONVENTION FOR MAKEFILE GOALS:
+# Goals that are called from external sources (not from within this Makefile) should follow
+# the pattern: ACTION_for-USE-CASE
+# 
+# Examples:
+#   - setup_for-openhands: called by .openhands/setup.sh
+#   - ci_for-github-ci-yml: called by .github/workflows/ci.yml
+#   - ci_for-developers: called by developers locally
+#   - check-code_for-self: called by test_runner for self-improvement
+#   - run-pre-commit-checks_for-git-hooks: called by git pre-commit hooks
+#
+# This convention helps distinguish between:
+#   - Internal goals (used only within this Makefile)
+#   - External goals (called from scripts, CI, or other external sources)
+#
+# When adding new goals that will be called externally, please follow this pattern.
+
 help:
 	@python -c "$$PRINT_HELP_PYSCRIPT" < $(MAKEFILE_LIST)
 
