@@ -42,18 +42,4 @@ else
     echo "⚠️  Some quality checks failed. Run 'make qa' to auto-fix issues."
 fi
 
-echo ""
 echo "🎉 SIP development environment setup complete!"
-echo ""
-echo "📋 Next steps:"
-echo "  • Run 'make qa' to auto-fix any style issues"
-echo "  • Run 'make ci' before committing (now automated via pre-commit hook)"
-echo "  • Set environment variables for integration tests:"
-echo "    export AGENT_GITHUB_TOKEN='your_token'"
-echo "    export OPENROUTER_API_KEY='your_key'"
-echo ""
-echo "🔧 Available commands:"
-echo "  • make qa      - Auto-fix style and run type checking"
-echo "  • make ci      - Run full CI pipeline"
-echo "  • make test    - Run tests with custom arguments"
-echo "  • make help    - Show all available make targets"
