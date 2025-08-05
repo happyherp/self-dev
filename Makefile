@@ -253,8 +253,4 @@ generate-openhands-repo: ## generate .openhands/repo.md from source files
 	@echo "---" >> .openhands/repo.md
 	@echo "" >> .openhands/repo.md
 	@cat PROJECT.md >> .openhands/repo.md
-	@echo "" >> .openhands/repo.md
-	@echo "---" >> .openhands/repo.md
-	@echo "" >> .openhands/repo.md
-	@cat openhands-instructions.md >> .openhands/repo.md
 	@echo "✅ Generated .openhands/repo.md"
