@@ -28,16 +28,19 @@ SIP is an AI-powered GitHub-native autonomous development system that processes 
 - **Testing**: `pytest` with coverage
 - **Build System**: `pyproject.toml` with uv
 
-## Critical Development Rules
+## Developer Types & Quality Checks
 
-### Always Run CI Before Committing
-**MANDATORY**: Run `make ci` before any commit or push. This runs:
-1. Linting with ruff (`make lint`)
-2. Format checking (`make format-check`)
-3. Type checking with mypy (`make typecheck`)
-4. Unit tests with coverage (`make test-unit`)
+**📖 See PROJECT.md for detailed explanation of the three developer types**
 
-**FOR AI AGENTS**: Use `make agent-check-code` which auto-fixes issues then runs CI.
+### Quick Reference:
+- **OpenHands (AI Agents)**: Always use `make agent-check-code` 
+- **Human Developers**: Use `make ci` (primary) or `make agent-check-code` (optional)
+- **Self-dev (SIP System)**: Automatically uses `make agent-check-code`
+
+### For OpenHands: Always Run agent-check-code Before Committing
+**MANDATORY**: Run `make agent-check-code` before any commit or push. This:
+1. Auto-fixes linting/formatting issues you can't manually fix
+2. Runs full CI validation (lint, format-check, typecheck, tests)
 
 ### Quality Targets Available
 - `make qa` - Auto-fix style, sort imports, format code, run type checking

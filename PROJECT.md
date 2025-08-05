@@ -48,6 +48,94 @@ except KeyError as e:
 
 This is especially critical for a self-improving system that needs to diagnose and fix its own issues. Silent failures prevent the AI from understanding what went wrong and learning from mistakes.
 
+## Three Developer Types
+
+This project supports three distinct types of developers, each with different capabilities and requirements for quality checks:
+
+### 1. OpenHands (AI Agents)
+**Characteristics:**
+- Cannot manually read and fix linting/formatting errors
+- Need automated fixes for trivial issues (imports, whitespace, formatting)
+- Excellent at complex logic and code changes
+- Work through automated tooling
+
+**Quality Check Strategy:**
+- **Always use**: `make agent-check-code` (auto-fix + validate)
+- **Why**: Automatically fixes trivial issues that AI can't manually resolve
+- **Never use**: `make ci` alone (will fail on fixable linting issues)
+
+**Workflow:**
+```bash
+# OpenHands development cycle
+make agent-check-code  # Auto-fix then validate
+git commit --author="openhands <openhands@all-hands.dev>" -m "Fix issue"
+```
+
+### 2. Human Developers
+**Characteristics:**
+- Can read error messages and manually fix issues
+- Prefer to see what's wrong before auto-fixing
+- May want control over formatting and style decisions
+- Can handle complex debugging
+
+**Quality Check Strategy:**
+- **Primary**: `make ci` (validate without auto-fixing)
+- **Optional**: `make agent-check-code` or `make qa` (when auto-fix is desired)
+- **Why**: Humans can read error messages and fix manually
+
+**Workflow:**
+```bash
+# Human development cycle
+make ci                # See issues first
+# Fix issues manually based on output
+git commit -m "Fix issue"
+
+# Alternative: auto-fix when desired
+make agent-check-code  # Auto-fix + validate
+git commit -m "Fix issue"
+```
+
+### 3. Self-dev (SIP System)
+**Characteristics:**
+- SIP processing GitHub issues automatically
+- Operates like an AI agent (can't manually fix linting)
+- Needs reliable, automated quality checks
+- Runs without human intervention
+
+**Quality Check Strategy:**
+- **Automatically configured**: Uses `make agent-check-code` via `SipTestRunner`
+- **Why**: SIP needs auto-fix capability like AI agents
+- **Configuration**: Set in `src/sip/test_runner.py`
+
+**Workflow:**
+```bash
+# Automatic via GitHub Actions
+python -m sip process-issue 123
+# SipTestRunner automatically uses: make agent-check-code
+```
+
+### Quality Check Commands Summary
+
+| Command | Purpose | Best For |
+|---------|---------|----------|
+| `make agent-check-code` | Auto-fix + validate | OpenHands, Self-dev |
+| `make ci` | Validate only | Human developers |
+| `make qa` | Auto-fix style + types | Any (when auto-fix desired) |
+| `make auto-fix` | Fix linting/formatting only | Development iterations |
+
+### Why This Matters
+
+The distinction between these developer types is critical because:
+
+1. **AI agents fail on fixable issues**: They can't read "missing import" errors and manually add imports
+2. **Humans prefer control**: They want to see errors first and decide how to fix them
+3. **Automated systems need reliability**: Self-dev must handle issues without human intervention
+
+This three-mode approach ensures that:
+- AI agents get the auto-fix support they need
+- Human developers maintain control and visibility
+- The SIP system operates reliably in automated scenarios
+
 ## How It Works
 
 ```
