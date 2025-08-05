@@ -7,6 +7,8 @@ import click
 
 from .config import Config
 from .issue_processor import IssueProcessor
+from .llm_client import LLMClient
+from .local_file_processor import LocalFileProcessor
 
 
 @click.group()
@@ -48,6 +50,45 @@ def process_issue(issue_number: int, repo: str | None = None) -> None:
     except Exception as e:
         click.echo(f"💥 Fatal error: {str(e)}")
         logging.exception("Fatal error in process_issue")
+        sys.exit(1)
+
+
+@main.command()
+@click.argument("goal_file", type=click.Path(exists=True))
+@click.argument("repo_dir", type=click.Path(exists=True, file_okay=False, dir_okay=True))
+@click.option("--apply", is_flag=True, help="Apply changes to local files (default: just show changes)")
+def process_local(goal_file: str, repo_dir: str, apply: bool = False) -> None:
+    """Process a local goal file against a local repository."""
+    try:
+        # Load configuration (only need LLM config for local processing)
+        config = Config.from_env()
+
+        click.echo(f"🤖 SIP: Processing local goal from {goal_file}")
+        click.echo(f"📁 Repository: {repo_dir}")
+
+        # Create LLM client and local processor
+        llm_client = LLMClient(config)
+        processor = LocalFileProcessor(llm_client)
+
+        # Process the goal
+        changeset = processor.process_goal_file(goal_file, repo_dir)
+
+        click.echo(f"✅ Generated changeset: {changeset.summary}")
+        click.echo(f"📝 Description: {changeset.description}")
+        click.echo(f"📄 Files to change: {len(changeset.files)}")
+
+        for file_change in changeset.files:
+            click.echo(f"  - {file_change.path}")
+
+        if apply:
+            processor.apply_changeset_locally(repo_dir, changeset)
+            click.echo("✅ Changes applied to local files!")
+        else:
+            click.echo("💡 Use --apply to apply changes to local files")
+
+    except Exception as e:
+        click.echo(f"💥 Fatal error: {str(e)}")
+        logging.exception("Fatal error in process_local")
         sys.exit(1)
 
 

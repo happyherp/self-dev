@@ -4,7 +4,8 @@ from pydantic_ai import Agent
 from pydantic_ai.models.openai import OpenAIModel
 
 from .config import Config
-from .models import AnalysisResult, GitHubIssue, PullRequest
+from .core import Goal
+from .models import AnalysisResult, PullRequest
 
 
 class LLMClient:
@@ -64,15 +65,13 @@ IMPORTANT:
 - Add tests if appropriate""",
         )
 
-    def analyze_issue(self, issue: GitHubIssue, repository_context: str) -> AnalysisResult:
-        """Analyze a GitHub issue and determine how to address it."""
-
-        prompt = f"""ISSUE TO ANALYZE:
-Title: {issue.title}
-Body: {issue.body}
-Author: {issue.author}
-Labels: {", ".join(issue.labels)}
-Repository: {issue.repository}
+    def analyze_goal(self, goal: Goal, repository_context: str) -> AnalysisResult:
+        """Analyze a goal and determine how to address it."""
+        prompt = f"""GOAL TO ANALYZE:
+Description: {goal.description}
+Context: {goal.context}
+Priority: {goal.priority}
+Tags: {", ".join(goal.tags)}
 
 REPOSITORY CONTEXT:
 {repository_context}"""
@@ -82,35 +81,37 @@ REPOSITORY CONTEXT:
 
     def generate_solution(
         self,
-        issue: GitHubIssue,
+        goal: Goal,
         analysis: AnalysisResult,
         file_contents: dict[str, str],
         previous_attempt: str | None = None,
-        test_failure: str | None = None,
+        last_error: str | None = None,
     ) -> PullRequest:
-        """Generate a complete solution for the issue."""
-
+        """Generate a complete solution for the goal."""
         files_context = ""
         for file_path, content in file_contents.items():
             files_context += f"\n--- {file_path} ---\n{content}\n"
 
         retry_context = ""
-        if previous_attempt and test_failure:
+        if previous_attempt and last_error:
             retry_context = f"""
 PREVIOUS ATTEMPT FAILED:
 The previous solution failed tests. Here was the previous attempt:
 {previous_attempt}
 
 TEST FAILURE:
-{test_failure}
+{last_error}
 
 Please fix the issues and provide a corrected solution.
 """
 
-        prompt = f"""ISSUE:
-Title: {issue.title}
-Body: {issue.body}
-Issue Number: {issue.number}
+        # Extract a title from the goal description for issue number context
+        goal_title = goal.description.split("\n")[0][:100]
+
+        prompt = f"""GOAL:
+Description: {goal.description}
+Context: {goal.context}
+Title: {goal_title}
 
 ANALYSIS:
 {analysis.suggested_approach}
