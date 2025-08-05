@@ -91,8 +91,6 @@ For OpenHands users, additional automated setup is available:
 ./.openhands/setup.sh
 ```
 
-See [`.openhands/README.md`](.openhands/README.md) for OpenHands-specific details.
-
 ## Documentation
 
 - [Installation Guide](docs/installation.md)
