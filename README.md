@@ -112,6 +112,11 @@ make run-pre-commit-checks
 ```
 
 
+**OpenHands Git Commits**: When committing as OpenHands, always use the OpenHands author:
+```bash
+git commit --author="openhands <openhands@all-hands.dev>" -m "Your commit message"
+```
+
 ## Documentation
 
 - [Installation Guide](docs/installation.md)
