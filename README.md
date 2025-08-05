@@ -57,6 +57,9 @@ SIP (Self-Improving Program) is an AI-powered system that:
 # Install with test dependencies
 uv pip install -e ".[test]"
 
+# Install pre-commit hooks (recommended for all developers)
+make install-pre-commit-hooks
+
 # Run tests
 make test
 
@@ -67,16 +70,28 @@ make qa
 make ci
 ```
 
-#### OpenHands Development Automation
+#### Pre-commit Hooks
 
-For OpenHands users, automated development tools are available:
+We strongly recommend installing pre-commit hooks that automatically run `make ci` before every commit:
 
 ```bash
-# Set up development environment with pre-commit hooks
+# Install pre-commit hooks (for all developers)
+make install-pre-commit-hooks
+
+# Manually run pre-commit checks
+make run-pre-commit-checks
+```
+
+#### OpenHands Development Automation
+
+For OpenHands users, additional automated setup is available:
+
+```bash
+# Set up development environment with dependencies and pre-commit hooks
 ./.openhands/setup.sh
 ```
 
-This installs a pre-commit hook that automatically runs `make ci` before every commit, ensuring code quality standards are maintained. See [`.openhands/README.md`](.openhands/README.md) for details.
+See [`.openhands/README.md`](.openhands/README.md) for OpenHands-specific details.
 
 ## Documentation
 

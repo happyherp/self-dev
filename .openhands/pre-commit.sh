@@ -1,10 +1,8 @@
 #!/bin/bash
-# SIP Pre-commit Quality Checks
-# This script runs all quality checks before allowing a commit
+# SIP Pre-commit Quality Checks for OpenHands
+# This script is a thin wrapper around the make target
 
 set -e  # Exit on any error
-
-echo "🔍 Running SIP pre-commit quality checks..."
 
 # Change to project root if not already there
 if [[ -f "pyproject.toml" ]]; then
@@ -24,36 +22,5 @@ fi
 
 echo "📁 Working in: $PROJECT_ROOT"
 
-# Check if there are any staged changes
-if ! git diff --cached --quiet; then
-    echo "📝 Found staged changes, running quality checks..."
-else
-    echo "⚠️  No staged changes found. Make sure to 'git add' your changes first."
-    exit 1
-fi
-
-# Run the full CI pipeline
-echo "🚀 Running 'make ci'..."
-if make ci; then
-    echo "✅ All quality checks passed!"
-    echo "🎉 Ready to commit!"
-else
-    echo ""
-    echo "❌ Quality checks failed!"
-    echo ""
-    echo "🔧 To fix issues automatically, run:"
-    echo "   make qa"
-    echo ""
-    echo "📋 Then review changes and commit again."
-    echo ""
-    echo "💡 Common fixes:"
-    echo "   • Linting errors: 'make lint-fix' or 'make qa' auto-fixes most issues"
-    echo "   • Format issues: 'make format'"
-    echo "   • Import sorting: 'uv run ruff check --select I --fix .'"
-    echo "   • Type errors: Check mypy output and fix type annotations"
-    echo ""
-    exit 1
-fi
-
-echo ""
-echo "✨ Pre-commit checks completed successfully!"
+# Call the make target that does the actual work
+make run-pre-commit-checks

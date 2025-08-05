@@ -4,7 +4,7 @@
 
 set -e  # Exit on any error
 
-echo "🚀 Setting up SIP development environment..."
+echo "🚀 Setting up SIP development environment for OpenHands..."
 
 # Check if we're in the right directory
 if [[ ! -f "pyproject.toml" ]] || [[ ! -f "Makefile" ]]; then
@@ -22,31 +22,8 @@ fi
 echo "📦 Installing dependencies with uv..."
 uv sync --extra test
 
-# Install pre-commit hook
-echo "🔧 Setting up pre-commit hook..."
-mkdir -p .git/hooks
-
-cat > .git/hooks/pre-commit << 'EOF'
-#!/bin/bash
-# SIP Pre-commit Hook - Runs quality checks before commit
-
-echo "🔍 Running pre-commit quality checks..."
-
-# Source the pre-commit script
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-
-if [[ -f "$PROJECT_ROOT/.openhands/pre-commit.sh" ]]; then
-    source "$PROJECT_ROOT/.openhands/pre-commit.sh"
-else
-    echo "❌ Pre-commit script not found at $PROJECT_ROOT/.openhands/pre-commit.sh"
-    exit 1
-fi
-EOF
-
-chmod +x .git/hooks/pre-commit
-
-echo "✅ Pre-commit hook installed successfully!"
+# Install pre-commit hooks using make target
+make install-pre-commit-hooks
 
 # Verify installation
 echo "🧪 Verifying installation..."

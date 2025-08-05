@@ -5,9 +5,9 @@ This directory contains automation tools to streamline development of the SIP pr
 ## Files
 
 ### `setup.sh`
-Development environment setup script that:
+OpenHands-specific development environment setup script that:
 - Installs dependencies with `uv`
-- Sets up pre-commit hooks
+- Calls `make install-pre-commit-hooks` to set up pre-commit hooks
 - Verifies the installation
 - Provides guidance for next steps
 
@@ -17,12 +17,11 @@ Development environment setup script that:
 ```
 
 ### `pre-commit.sh`
-Pre-commit quality check script that:
-- Runs the full `make ci` pipeline
-- Prevents commits if quality checks fail
-- Provides helpful error messages and fix suggestions
+OpenHands-specific pre-commit wrapper that:
+- Calls `make run-pre-commit-checks` to run quality checks
+- Provides a thin wrapper for OpenHands compatibility
 
-**Automatically triggered by git pre-commit hook after running setup.sh**
+**Note:** Regular developers should use `make install-pre-commit-hooks` directly
 
 ### `microagents/sip-development.md`
 OpenHands microagent that provides:

@@ -56,6 +56,9 @@ Required environment variables for full functionality:
 # Install with test dependencies
 uv sync --extra test
 
+# Install pre-commit hooks (recommended)
+make install-pre-commit-hooks
+
 # Run quality fixes
 make qa
 
@@ -65,12 +68,13 @@ make ci
 
 ### Pre-Commit Workflow
 ```bash
-# Before any commit:
-make ci
-
-# If CI passes, then commit:
+# Pre-commit hooks automatically run 'make ci' before commits
+# Just stage and commit normally:
 git add .
 git commit --author="openhands <openhands@all-hands.dev>" -m "Your commit message"
+
+# Or manually run pre-commit checks:
+make run-pre-commit-checks
 ```
 
 ### Testing
