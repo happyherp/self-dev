@@ -5,7 +5,7 @@ This document contains specific instructions for OpenHands (AI agents) working o
 ## Critical Development Rules for AI Agents
 
 ### Mandatory Quality Checks
-**ALWAYS run `make agent-check-code_for-ai-agents` before committing**. This command:
+**ALWAYS run `make check-code_for-self` before committing**. This command:
 1. Auto-fixes linting and formatting issues
 2. Runs the full CI pipeline to ensure quality
 
@@ -30,8 +30,8 @@ Required environment variables:
 
 #### Quality Automation
 ```bash
-# Auto-fix issues then run CI (recommended for AI agents)
-make agent-check-code
+# Auto-fix issues then run CI (recommended for self-improvement)
+make check-code_for-self
 
 # Auto-fix linting and formatting only
 make auto-fix
@@ -83,7 +83,7 @@ Silent failures prevent the AI from understanding what went wrong and learning f
 
 - `src/sip/` - Main package code
 - `tests/` - Test files  
-- `Makefile` - Development automation (use `make agent-check-code`)
+- `Makefile` - Development automation (use `make check-code_for-self`)
 - `pyproject.toml` - Project configuration
 - `.github/workflows/` - CI/CD automation
 - `.openhands/` - OpenHands configuration and scripts
@@ -102,7 +102,7 @@ Silent failures prevent the AI from understanding what went wrong and learning f
 
 ## Best Practices for AI Agents
 
-1. **Always run `make agent-check-code_for-ai-agents` before committing**
+1. **Always run `make check-code_for-self` before committing**
 2. Use descriptive commit messages
 3. Keep commits focused and atomic
 4. Write tests for new functionality
@@ -112,6 +112,6 @@ Silent failures prevent the AI from understanding what went wrong and learning f
 ## Available Automation
 
 - `.openhands/setup.sh` - Development environment setup
-- `make agent-check-code_for-ai-agents` - AI-optimized quality pipeline
+- `make check-code_for-self` - Self-improvement quality pipeline
 - Pre-commit hooks - Automatic quality checks
 - GitHub Actions - Automated CI/CD

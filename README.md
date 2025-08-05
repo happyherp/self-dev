@@ -96,7 +96,7 @@ make test
 make qa
 
 # Run full CI pipeline (required before committing)
-make agent-check-code
+make check-code_for-self
 ```
 
 #### Pre-commit Hooks

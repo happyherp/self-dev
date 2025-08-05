@@ -66,14 +66,15 @@ auto-fix: ## automatically fix all fixable linting and formatting issues
 	@uv run --extra test ruff format src/ tests/
 	@echo "✅ Auto-fix complete"
 
-agent-check-code_for-ai-agents: ## auto-fix issues then run CI checks (called by AI agents)
-	@echo "🤖 Agent code check: auto-fixing then validating..."
+check-code_for-self: ## auto-fix issues then run CI checks (called by test_runner for self-improvement)
+	@echo "🔧 Self-check: auto-fixing then validating code..."
 	@$(MAKE) auto-fix
 	@echo "🔍 Running CI validation..."
 	@$(MAKE) ci_for-developers
 
-# Legacy alias for backwards compatibility  
-agent-check-code: agent-check-code_for-ai-agents ## alias for agent-check-code_for-ai-agents (backwards compatibility)
+# Legacy aliases for backwards compatibility  
+agent-check-code_for-ai-agents: check-code_for-self ## alias for check-code_for-self (backwards compatibility)
+agent-check-code: check-code_for-self ## alias for check-code_for-self (backwards compatibility)
 
 lint: ## check code style with ruff
 	uv run ruff check src/ tests/
