@@ -37,8 +37,12 @@ SIP is an AI-powered GitHub-native autonomous development system that processes 
 3. Type checking with mypy (`make typecheck`)
 4. Unit tests with coverage (`make test-unit`)
 
+**FOR AI AGENTS**: Use `make agent-check-code` which auto-fixes issues then runs CI.
+
 ### Quality Targets Available
 - `make qa` - Auto-fix style, sort imports, format code, run type checking
+- `make auto-fix` - Automatically fix all fixable linting and formatting issues
+- `make agent-check-code` - Auto-fix issues then run CI checks (for AI agents)
 - `make ci` - Full CI pipeline (must pass before committing)
 - `make test-unit` - Run unit tests with coverage
 - `make test-integration` - Run integration tests (requires API tokens)

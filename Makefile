@@ -54,6 +54,21 @@ qa: ## fix style, sort imports, check types
 	uv run --extra test ruff format .
 	uv run --extra test mypy src/
 
+auto-fix: ## automatically fix all fixable linting and formatting issues
+	@echo "🔧 Auto-fixing linting issues..."
+	@uv run --extra test ruff check src/ tests/ --fix || true
+	@echo "🔧 Auto-fixing import sorting..."
+	@uv run --extra test ruff check --select I src/ tests/ --fix || true
+	@echo "🔧 Auto-formatting code..."
+	@uv run --extra test ruff format src/ tests/
+	@echo "✅ Auto-fix complete"
+
+agent-check-code: ## auto-fix issues then run CI checks (for AI agents)
+	@echo "🤖 Agent code check: auto-fixing then validating..."
+	@$(MAKE) auto-fix
+	@echo "🔍 Running CI validation..."
+	@$(MAKE) ci
+
 lint: ## check code style with ruff
 	uv run ruff check src/ tests/
 

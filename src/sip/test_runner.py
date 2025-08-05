@@ -21,10 +21,10 @@ class SipTestRunner:
         """Initialize test runner.
 
         Args:
-            test_command: Command to run tests. Defaults to full CI pipeline.
+            test_command: Command to run tests. Defaults to agent-check-code (auto-fix + CI).
         """
-        # Run the same CI pipeline that GitHub Actions uses
-        self.test_command = test_command or ["make", "ci"]
+        # Run agent-check-code which auto-fixes issues then runs CI pipeline
+        self.test_command = test_command or ["make", "agent-check-code"]
 
     def run_tests(self, cwd: str | None = None) -> SipTestResult:
         """Run tests and return results.
