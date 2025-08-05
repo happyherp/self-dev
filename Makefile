@@ -27,7 +27,7 @@ BROWSER := python -c "$$BROWSER_PYSCRIPT"
 help:
 	@python -c "$$PRINT_HELP_PYSCRIPT" < $(MAKEFILE_LIST)
 
-clean: clean-build clean-pyc clean-test ## remove all build, test, coverage and Python artifacts
+clean: clean-build clean-pyc clean-test clean-openhands ## remove all build, test, coverage and Python artifacts
 
 clean-build: ## remove build artifacts
 	rm -fr build/
@@ -47,6 +47,9 @@ clean-test: ## remove test and coverage artifacts
 	rm -f .coverage
 	rm -fr htmlcov/
 	rm -fr .pytest_cache
+
+clean-openhands: ## remove generated OpenHands files
+	rm -f .openhands/repo.md
 
 qa: ## fix style, sort imports, check types
 	uv run --extra test ruff check . --fix
@@ -93,16 +96,19 @@ security: ## run security checks
 
 ci: ## run all CI checks locally (matches GitHub Actions pipeline)
 	@echo "🔍 Running CI pipeline locally..."
-	@echo "📋 Step 1: Linting with ruff..."
+	@echo "📋 Step 1: Generating OpenHands repo documentation..."
+	@$(MAKE) generate-openhands-repo
+	@echo "✅ OpenHands repo documentation generated"
+	@echo "📋 Step 2: Linting with ruff..."
 	@$(MAKE) lint
 	@echo "✅ Linting passed"
-	@echo "📋 Step 2: Format check with ruff..."
+	@echo "📋 Step 3: Format check with ruff..."
 	@$(MAKE) format-check
 	@echo "✅ Format check passed"
-	@echo "📋 Step 3: Type checking with mypy..."
+	@echo "📋 Step 4: Type checking with mypy..."
 	@$(MAKE) typecheck
 	@echo "✅ Type checking passed"
-	@echo "📋 Step 4: Running tests with coverage..."
+	@echo "📋 Step 5: Running tests with coverage..."
 	@$(MAKE) test-unit
 	@echo "✅ All CI checks passed! 🎉"
 
@@ -196,3 +202,24 @@ install-pre-commit-hooks: ## install pre-commit hooks for quality checks
 
 run-pre-commit-checks: ## run pre-commit quality checks (used by git hook)
 	@git diff --cached --quiet || $(MAKE) ci
+
+generate-openhands-repo: ## generate .openhands/repo.md from source files
+	@echo "📝 Generating .openhands/repo.md from source files..."
+	@mkdir -p .openhands
+	@echo "# SIP Repository Instructions for OpenHands" > .openhands/repo.md
+	@echo "" >> .openhands/repo.md
+	@echo "This file is auto-generated from multiple source files. Do not edit directly." >> .openhands/repo.md
+	@echo "Run 'make generate-openhands-repo' to regenerate." >> .openhands/repo.md
+	@echo "" >> .openhands/repo.md
+	@echo "---" >> .openhands/repo.md
+	@echo "" >> .openhands/repo.md
+	@cat README.md >> .openhands/repo.md
+	@echo "" >> .openhands/repo.md
+	@echo "---" >> .openhands/repo.md
+	@echo "" >> .openhands/repo.md
+	@cat PROJECT.md >> .openhands/repo.md
+	@echo "" >> .openhands/repo.md
+	@echo "---" >> .openhands/repo.md
+	@echo "" >> .openhands/repo.md
+	@cat openhands-instructions.md >> .openhands/repo.md
+	@echo "✅ Generated .openhands/repo.md"
