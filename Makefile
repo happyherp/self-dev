@@ -174,46 +174,10 @@ install: clean ## install the package to the active Python's site-packages
 	python setup.py install
 
 install-pre-commit-hooks: ## install pre-commit hooks for quality checks
-	@echo "🔧 Installing pre-commit hooks..."
 	@mkdir -p .git/hooks
 	@echo '#!/bin/bash' > .git/hooks/pre-commit
-	@echo '# SIP Pre-commit Hook - Runs quality checks before commit' >> .git/hooks/pre-commit
-	@echo 'echo "🔍 Running pre-commit quality checks..."' >> .git/hooks/pre-commit
 	@echo 'make run-pre-commit-checks' >> .git/hooks/pre-commit
 	@chmod +x .git/hooks/pre-commit
-	@echo "✅ Pre-commit hook installed successfully!"
-	@echo "📋 The hook will automatically run 'make ci' before every commit"
 
 run-pre-commit-checks: ## run pre-commit quality checks (used by git hook)
-	@echo "🔍 Running SIP pre-commit quality checks..."
-	@# Check if there are any staged changes
-	@if ! git diff --cached --quiet; then \
-		echo "📝 Found staged changes, running quality checks..."; \
-	else \
-		echo "⚠️  No staged changes found. Make sure to 'git add' your changes first."; \
-		exit 1; \
-	fi
-	@# Run the full CI pipeline
-	@echo "🚀 Running 'make ci'..."
-	@if $(MAKE) ci; then \
-		echo "✅ All quality checks passed!"; \
-		echo "🎉 Ready to commit!"; \
-		echo ""; \
-		echo "✨ Pre-commit checks completed successfully!"; \
-	else \
-		echo ""; \
-		echo "❌ Quality checks failed!"; \
-		echo ""; \
-		echo "🔧 To fix issues automatically, run:"; \
-		echo "   make qa"; \
-		echo ""; \
-		echo "📋 Then review changes and commit again."; \
-		echo ""; \
-		echo "💡 Common fixes:"; \
-		echo "   • Linting errors: 'make lint-fix' or 'make qa' auto-fixes most issues"; \
-		echo "   • Format issues: 'make format'"; \
-		echo "   • Import sorting: 'uv run ruff check --select I --fix .'"; \
-		echo "   • Type errors: Check mypy output and fix type annotations"; \
-		echo ""; \
-		exit 1; \
-	fi
+	@git diff --cached --quiet || $(MAKE) ci
