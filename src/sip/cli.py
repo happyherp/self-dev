@@ -30,14 +30,16 @@ def process_issue(issue_number: int, repo: str | None = None, branch: str | None
 
         # Use provided repo or default
         target_repo = repo or config.default_repository
-        
+
         # Default to current git branch if no branch specified
         if not branch:
             import subprocess
+
             try:
-                result = subprocess.run(['git', 'rev-parse', '--abbrev-ref', 'HEAD'], 
-                                      capture_output=True, text=True, check=True)
-                target_branch = result.stdout.strip()
+                git_result = subprocess.run(
+                    ["git", "rev-parse", "--abbrev-ref", "HEAD"], capture_output=True, text=True, check=True
+                )
+                target_branch = git_result.stdout.strip()
             except (subprocess.CalledProcessError, FileNotFoundError):
                 target_branch = "main"  # Fallback if git command fails
         else:
@@ -48,17 +50,17 @@ def process_issue(issue_number: int, repo: str | None = None, branch: str | None
 
         # Process the issue
         processor = IssueProcessor(config)
-        result = processor.process_issue(target_repo, issue_number, target_branch)
+        processing_result = processor.process_issue(target_repo, issue_number, target_branch)
 
-        if result.success:
+        if processing_result.success:
             click.echo(f"✅ Successfully processed issue #{issue_number}")
-            if result.pull_request:
-                click.echo(f"📝 Created pull request: {result.pull_request.title}")
-                click.echo(f"🌿 Branch: {result.pull_request.branch_name}")
+            if processing_result.pull_request:
+                click.echo(f"📝 Created pull request: {processing_result.pull_request.title}")
+                click.echo(f"🌿 Branch: {processing_result.pull_request.branch_name}")
         else:
             click.echo(f"❌ Failed to process issue #{issue_number}")
-            if result.error_message:
-                click.echo(f"Error: {result.error_message}")
+            if processing_result.error_message:
+                click.echo(f"Error: {processing_result.error_message}")
             sys.exit(1)
 
     except Exception as e:

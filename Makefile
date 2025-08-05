@@ -207,11 +207,10 @@ run-pre-commit-checks_for-git-hooks: ## run pre-commit quality checks (called by
 setup_for-openhands: ## complete OpenHands development environment setup (called by .openhands/setup.sh)
 	@echo "🚀 Setting up OpenHands development environment..."
 	@uv sync --extra test
-	@echo "🔧 Installing pre-commit hooks..."
-	@$(MAKE) install-pre-commit-hooks
 	@echo "📝 Generating OpenHands repository documentation..."
 	@$(MAKE) generate-openhands-repo
 	@echo "🎉 OpenHands development environment setup complete!"
+	@echo "ℹ️  Note: OpenHands uses its own pre-commit mechanism via .openhands/pre-commit.sh"
 
 generate-openhands-repo: ## generate .openhands/repo.md from source files
 	@echo "📝 Generating .openhands/repo.md from source files..."

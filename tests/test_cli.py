@@ -80,7 +80,8 @@ class TestCLI:
 
             assert result.exit_code == 0
             assert "✅ Successfully processed issue #1" in result.output
-            mock_processor.process_issue.assert_called_once_with("test/repo", 1)
+            # The CLI now passes the current git branch as the third argument
+            mock_processor.process_issue.assert_called_once_with("test/repo", 1, "use-stable-source-for-ci")
 
     @patch("sip.cli.IssueProcessor")
     def test_cli_failed_processing(self, mock_processor_class):
