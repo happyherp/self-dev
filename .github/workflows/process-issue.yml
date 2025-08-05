@@ -26,7 +26,10 @@ jobs:
       - name: Process Issue
         run: |
           source $HOME/.cargo/env
-          uv run python -m sip process-issue ${{ github.event.issue.number }}
+          # Use the current development branch instead of main
+          CURRENT_BRANCH="${{ github.head_ref || github.ref_name }}"
+          echo "Processing issue against branch: $CURRENT_BRANCH"
+          uv run python -m sip process-issue ${{ github.event.issue.number }} --branch "$CURRENT_BRANCH"
         env:
           AGENT_GITHUB_TOKEN: ${{ secrets.AGENT_GITHUB_TOKEN }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}

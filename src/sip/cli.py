@@ -21,7 +21,8 @@ def main() -> None:
 @main.command()
 @click.argument("issue_number", type=int)
 @click.option("--repo", help="Repository in format owner/repo (defaults to happyherp/self-dev)")
-def process_issue(issue_number: int, repo: str | None = None) -> None:
+@click.option("--branch", help="Branch to analyze and create PR from (defaults to main)")
+def process_issue(issue_number: int, repo: str | None = None, branch: str | None = None) -> None:
     """Process a GitHub issue with AI."""
     try:
         # Load configuration
@@ -29,12 +30,14 @@ def process_issue(issue_number: int, repo: str | None = None) -> None:
 
         # Use provided repo or default
         target_repo = repo or config.default_repository
+        target_branch = branch or "main"
 
         click.echo(f"🤖 SIP: Processing issue #{issue_number} in {target_repo}")
+        click.echo(f"🌿 Analyzing branch: {target_branch}")
 
         # Process the issue
         processor = IssueProcessor(config)
-        result = processor.process_issue(target_repo, issue_number)
+        result = processor.process_issue(target_repo, issue_number, target_branch)
 
         if result.success:
             click.echo(f"✅ Successfully processed issue #{issue_number}")

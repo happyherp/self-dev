@@ -36,7 +36,7 @@ class IssueProcessor:
 
         self.logger = logging.getLogger(__name__)
 
-    def process_issue(self, repo: str, issue_number: int) -> ProcessingResult:
+    def process_issue(self, repo: str, issue_number: int, branch: str = "main") -> ProcessingResult:
         """
         Process a GitHub issue end-to-end.
 
@@ -49,6 +49,7 @@ class IssueProcessor:
         Args:
             repo: Repository name in format "owner/repo"
             issue_number: GitHub issue number
+            branch: Branch to analyze and create PR from (defaults to "main")
 
         Returns:
             ProcessingResult with GitHub-specific information
@@ -62,7 +63,7 @@ class IssueProcessor:
             self.logger.info(f"Converted issue to goal: {goal.description[:100]}...")
 
             # 2. Fetch GitHub repository and convert to Repo
-            github_repo = self._fetch_github_repo(repo)
+            github_repo = self._fetch_github_repo(repo, branch)
             core_repo = self._github_to_repo(repo, github_repo)
             self.logger.info(f"Loaded repository with {len(core_repo.files)} files")
 
@@ -71,7 +72,7 @@ class IssueProcessor:
             self.logger.info(f"Generated changeset with {len(changeset.files)} file changes")
 
             # 4. Convert changeset to GitHub PR
-            pr_url = self._changeset_to_github_pr(repo, changeset, issue_number)
+            pr_url = self._changeset_to_github_pr(repo, changeset, issue_number, branch)
             self.logger.info(f"Created GitHub PR: {pr_url}")
 
             # 5. Convert back to GitHub-specific result format
@@ -95,6 +96,7 @@ class IssueProcessor:
                 body=f"{changeset.description}\n\nCloses #{issue_number}",
                 branch_name=changeset.branch_name or f"sip/issue-{issue_number}",
                 changes=code_changes,
+                base_branch=branch,
             )
 
             return ProcessingResult(
@@ -123,15 +125,15 @@ class IssueProcessor:
             tags=issue.labels,
         )
 
-    def _fetch_github_repo(self, repo: str) -> dict[str, str]:
+    def _fetch_github_repo(self, repo: str, branch: str = "main") -> dict[str, str]:
         """Fetch repository files from GitHub."""
         # Get list of files and then fetch their content
         files = {}
-        file_paths = self.github.list_repository_files(repo)
+        file_paths = self.github.list_repository_files(repo, ref=branch)
 
         for file_path in file_paths:
             try:
-                content = self.github.get_file_content(repo, file_path)
+                content = self.github.get_file_content(repo, file_path, ref=branch)
                 files[file_path] = content
             except Exception as e:
                 self.logger.warning(f"Could not fetch {file_path}: {e}")
@@ -150,7 +152,7 @@ class IssueProcessor:
             },
         )
 
-    def _changeset_to_github_pr(self, repo: str, changeset: ChangeSet, issue_number: int) -> str:
+    def _changeset_to_github_pr(self, repo: str, changeset: ChangeSet, issue_number: int, base_branch: str = "main") -> str:
         """Convert a ChangeSet to a GitHub pull request and return the PR URL."""
         from .models import CodeChange, PullRequest
 
@@ -175,10 +177,11 @@ class IssueProcessor:
             body=f"{changeset.description}\n\nCloses #{issue_number}",
             branch_name=branch_name,
             changes=code_changes,
+            base_branch=base_branch,
         )
 
         # First create the branch and commit changes
-        self.github.create_branch(repo, branch_name)
+        self.github.create_branch(repo, branch_name, base_branch)
         self.github.commit_changes(repo, branch_name, code_changes, changeset.summary)
 
         # Then create the pull request
