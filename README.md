@@ -111,14 +111,6 @@ make install-pre-commit-hooks
 make run-pre-commit-checks
 ```
 
-#### OpenHands Development Automation
-
-For OpenHands users, additional automated setup is available:
-
-```bash
-# Set up development environment with dependencies and pre-commit hooks
-./.openhands/setup.sh
-```
 
 ## Documentation
 
