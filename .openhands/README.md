@@ -70,4 +70,4 @@ export OPENROUTER_API_KEY="your_openrouter_key"
 - **Fast Feedback**: Catches issues before they reach CI/CD
 - **Automated Fixes**: `make qa` auto-fixes most style issues
 - **Context Awareness**: Microagent provides project-specific guidance
-- **Error Prevention**: Prevents broken commits from entering the repository# Test comment
+- **Error Prevention**: Prevents broken commits from entering the repository
