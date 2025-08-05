@@ -4,8 +4,6 @@
 
 set -e  # Exit on any error
 
-echo "🚀 Setting up SIP development environment for OpenHands..."
-
 # Check if we're in the right directory
 if [[ ! -f "pyproject.toml" ]] || [[ ! -f "Makefile" ]]; then
     echo "❌ Error: This script must be run from the SIP project root directory"
@@ -19,27 +17,5 @@ if ! command -v uv &> /dev/null; then
     export PATH="$HOME/.cargo/bin:$PATH"
 fi
 
-echo "📦 Installing dependencies with uv..."
-uv sync --extra test
-
-# Install pre-commit hooks using make target
-make install-pre-commit-hooks
-
-# Verify installation
-echo "🧪 Verifying installation..."
-if uv run python -c "import sip; print('✅ SIP package importable')"; then
-    echo "✅ Package installation verified"
-else
-    echo "❌ Package installation failed"
-    exit 1
-fi
-
-# Check if make ci works
-echo "🔍 Testing make ci..."
-if make ci; then
-    echo "✅ All quality checks passed!"
-else
-    echo "⚠️  Some quality checks failed. Run 'make qa' to auto-fix issues."
-fi
-
-echo "🎉 SIP development environment setup complete!"
+# Use the make target for complete setup
+make setup_for-openhands

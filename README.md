@@ -89,14 +89,8 @@ uv pip install -e ".[test]"
 # Install pre-commit hooks (recommended for all developers)
 make install-pre-commit-hooks
 
-# Run tests
-make test
-
-# Run quality checks
-make qa
-
 # Run full CI pipeline (required before committing)
-make ci
+make ci_for-developers
 ```
 
 #### Pre-commit Hooks
@@ -109,15 +103,6 @@ make install-pre-commit-hooks
 
 # Manually run pre-commit checks
 make run-pre-commit-checks
-```
-
-#### OpenHands Development Automation
-
-For OpenHands users, additional automated setup is available:
-
-```bash
-# Set up development environment with dependencies and pre-commit hooks
-./.openhands/setup.sh
 ```
 
 ## Documentation

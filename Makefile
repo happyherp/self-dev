@@ -27,7 +27,7 @@ BROWSER := python -c "$$BROWSER_PYSCRIPT"
 help:
 	@python -c "$$PRINT_HELP_PYSCRIPT" < $(MAKEFILE_LIST)
 
-clean: clean-build clean-pyc clean-test ## remove all build, test, coverage and Python artifacts
+clean: clean-build clean-pyc clean-test clean-openhands ## remove all build, test, coverage and Python artifacts
 
 clean-build: ## remove build artifacts
 	rm -fr build/
@@ -48,6 +48,9 @@ clean-test: ## remove test and coverage artifacts
 	rm -fr htmlcov/
 	rm -fr .pytest_cache
 
+clean-openhands: ## remove generated OpenHands files
+	rm -f .openhands/repo.md
+
 qa: ## fix style, sort imports, check types
 	uv run --extra test ruff check . --fix
 	uv run --extra test ruff check --select I --fix .
@@ -63,11 +66,15 @@ auto-fix: ## automatically fix all fixable linting and formatting issues
 	@uv run --extra test ruff format src/ tests/
 	@echo "✅ Auto-fix complete"
 
-agent-check-code: ## auto-fix issues then run CI checks (for AI agents)
-	@echo "🤖 Agent code check: auto-fixing then validating..."
+check-code_for-self: ## auto-fix issues then run CI checks (called by test_runner for self-improvement)
+	@echo "🔧 Self-check: auto-fixing then validating code..."
 	@$(MAKE) auto-fix
 	@echo "🔍 Running CI validation..."
-	@$(MAKE) ci
+	@$(MAKE) ci_for-developers
+
+# Legacy aliases for backwards compatibility  
+agent-check-code_for-ai-agents: check-code_for-self ## alias for check-code_for-self (backwards compatibility)
+agent-check-code: check-code_for-self ## alias for check-code_for-self (backwards compatibility)
 
 lint: ## check code style with ruff
 	uv run ruff check src/ tests/
@@ -91,20 +98,37 @@ security: ## run security checks
 	@echo "🔒 Running security checks..."
 	@uv run python scripts/security_check.py
 
-ci: ## run all CI checks locally (matches GitHub Actions pipeline)
-	@echo "🔍 Running CI pipeline locally..."
-	@echo "📋 Step 1: Linting with ruff..."
+ci-goal: ## core CI pipeline implementation (called by all ci_for-* targets)
+	@echo "📋 Step 1: Generating OpenHands repo documentation..."
+	@$(MAKE) generate-openhands-repo
+	@echo "✅ OpenHands repo documentation generated"
+	@echo "📋 Step 2: Linting with ruff..."
 	@$(MAKE) lint
 	@echo "✅ Linting passed"
-	@echo "📋 Step 2: Format check with ruff..."
+	@echo "📋 Step 3: Format check with ruff..."
 	@$(MAKE) format-check
 	@echo "✅ Format check passed"
-	@echo "📋 Step 3: Type checking with mypy..."
+	@echo "📋 Step 4: Type checking with mypy..."
 	@$(MAKE) typecheck
 	@echo "✅ Type checking passed"
-	@echo "📋 Step 4: Running tests with coverage..."
+	@echo "📋 Step 5: Running tests with coverage..."
 	@$(MAKE) test-unit
 	@echo "✅ All CI checks passed! 🎉"
+
+ci_for-github-ci-yml: ## run all CI checks (called by .github/workflows/ci.yml)
+	@echo "🔍 Running CI pipeline for GitHub CI workflow..."
+	@$(MAKE) ci-goal
+
+ci_for-developers: ## run all CI checks locally (called by developers)
+	@echo "🔍 Running CI pipeline locally..."
+	@$(MAKE) ci-goal
+
+ci_for-setup: ## run all CI checks during setup (called internally by setup targets)
+	@echo "🔍 Running CI pipeline for setup verification..."
+	@$(MAKE) ci-goal
+
+# Legacy alias for backwards compatibility
+ci: ci_for-developers ## alias for ci_for-developers (backwards compatibility)
 
 MAKECMDGOALS ?= .	
 
@@ -138,23 +162,6 @@ test-integration: ## run integration tests with live API tokens (fails if secret
 	@echo "Testing GitHub API connectivity..."
 	@uv run python -c "from sip.github_client import GitHubClient; from sip.config import Config; config = Config.from_env(); client = GitHubClient(config); repo_info = client.get_repository(config.default_repository); print(f'✅ GitHub API connected - Repository: {repo_info[\"full_name\"]}'); print(f'✅ Repository description: {repo_info.get(\"description\", \"No description\")}')";
 	@echo "✅ All integration tests passed!"
-
-test-integration-optional: ## run integration tests with live API tokens (skips if secrets missing)
-	@echo "🧪 Running integration tests with live API tokens..."
-	@# Skip gracefully if secrets are not available (for local development)
-	@if [ -z "$$AGENT_GITHUB_TOKEN" ] || [ -z "$$OPENROUTER_API_KEY" ]; then \
-		echo "⚠️ Skipping integration tests (secrets not available)"; \
-		echo "Set AGENT_GITHUB_TOKEN and OPENROUTER_API_KEY environment variables to run integration tests"; \
-	else \
-		echo "Testing CLI help command..."; \
-		uv run python -m sip --help > /dev/null; \
-		echo "✅ CLI help works"; \
-		echo "Testing config loading..."; \
-		uv run python -c "from sip.config import Config; config = Config.from_env(); print(f'✅ Config loaded for repository: {config.default_repository}')"; \
-		echo "Testing GitHub API connectivity..."; \
-		uv run python -c "from sip.github_client import GitHubClient; from sip.config import Config; config = Config.from_env(); client = GitHubClient(config); repo_info = client.get_repository(config.default_repository); print(f'✅ GitHub API connected - Repository: {repo_info[\"full_name\"]}'); print(f'✅ Repository description: {repo_info.get(\"description\", \"No description\")}')"; \
-		echo "✅ All integration tests passed!"; \
-	fi
 
 coverage: ## check code coverage quickly with the default Python
 	coverage run --source sip -m pytest
@@ -191,8 +198,34 @@ install: clean ## install the package to the active Python's site-packages
 install-pre-commit-hooks: ## install pre-commit hooks for quality checks
 	@mkdir -p .git/hooks
 	@echo '#!/bin/bash' > .git/hooks/pre-commit
-	@echo 'make run-pre-commit-checks' >> .git/hooks/pre-commit
+	@echo 'make run-pre-commit-checks_for-git-hooks' >> .git/hooks/pre-commit
 	@chmod +x .git/hooks/pre-commit
 
-run-pre-commit-checks: ## run pre-commit quality checks (used by git hook)
-	@git diff --cached --quiet || $(MAKE) ci
+run-pre-commit-checks_for-git-hooks: ## run pre-commit quality checks (called by git pre-commit hooks)
+	@git diff --cached --quiet || $(MAKE) ci_for-developers
+
+setup_for-openhands: ## complete OpenHands development environment setup (called by .openhands/setup.sh)
+	@echo "🚀 Setting up OpenHands development environment..."
+	@uv sync --extra test
+	@echo "🔧 Installing pre-commit hooks..."
+	@$(MAKE) install-pre-commit-hooks
+	@echo "📝 Generating OpenHands repository documentation..."
+	@$(MAKE) generate-openhands-repo
+	@echo "🎉 OpenHands development environment setup complete!"
+
+generate-openhands-repo: ## generate .openhands/repo.md from source files
+	@echo "📝 Generating .openhands/repo.md from source files..."
+	@mkdir -p .openhands
+	@echo "# SIP Repository Instructions for OpenHands" > .openhands/repo.md
+	@echo "" >> .openhands/repo.md
+	@echo "This file is auto-generated from multiple source files. Do not edit directly." >> .openhands/repo.md
+	@echo "Run 'make generate-openhands-repo' to regenerate." >> .openhands/repo.md
+	@echo "" >> .openhands/repo.md
+	@echo "---" >> .openhands/repo.md
+	@echo "" >> .openhands/repo.md
+	@cat README.md >> .openhands/repo.md
+	@echo "" >> .openhands/repo.md
+	@echo "---" >> .openhands/repo.md
+	@echo "" >> .openhands/repo.md
+	@cat PROJECT.md >> .openhands/repo.md
+	@echo "✅ Generated .openhands/repo.md"
