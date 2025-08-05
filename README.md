@@ -89,14 +89,8 @@ uv pip install -e ".[test]"
 # Install pre-commit hooks (recommended for all developers)
 make install-pre-commit-hooks
 
-# Run tests
-make test
-
-# Run quality checks
-make qa
-
 # Run full CI pipeline (required before committing)
-make check-code_for-self
+make ci_for-developers
 ```
 
 #### Pre-commit Hooks
@@ -109,12 +103,6 @@ make install-pre-commit-hooks
 
 # Manually run pre-commit checks
 make run-pre-commit-checks
-```
-
-
-**OpenHands Git Commits**: When committing as OpenHands, always use the OpenHands author:
-```bash
-git commit --author="openhands <openhands@all-hands.dev>" -m "Your commit message"
 ```
 
 ## Documentation
