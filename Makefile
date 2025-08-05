@@ -203,6 +203,29 @@ install-pre-commit-hooks: ## install pre-commit hooks for quality checks
 run-pre-commit-checks: ## run pre-commit quality checks (used by git hook)
 	@git diff --cached --quiet || $(MAKE) ci
 
+setup-openhands: ## complete OpenHands development environment setup
+	@echo "🚀 Setting up OpenHands development environment..."
+	@echo "📦 Installing dependencies with uv..."
+	@uv sync --extra test
+	@echo "🔧 Installing pre-commit hooks..."
+	@$(MAKE) install-pre-commit-hooks
+	@echo "📝 Generating OpenHands repository documentation..."
+	@$(MAKE) generate-openhands-repo
+	@echo "🧪 Verifying installation..."
+	@if uv run python -c "import sip; print('✅ SIP package importable')"; then \
+		echo "✅ Package installation verified"; \
+	else \
+		echo "❌ Package installation failed"; \
+		exit 1; \
+	fi
+	@echo "🔍 Testing CI pipeline..."
+	@if $(MAKE) ci; then \
+		echo "✅ All quality checks passed!"; \
+	else \
+		echo "⚠️  Some quality checks failed. Run 'make qa' to auto-fix issues."; \
+	fi
+	@echo "🎉 OpenHands development environment setup complete!"
+
 generate-openhands-repo: ## generate .openhands/repo.md from source files
 	@echo "📝 Generating .openhands/repo.md from source files..."
 	@mkdir -p .openhands
