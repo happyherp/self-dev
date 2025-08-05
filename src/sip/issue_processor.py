@@ -1,301 +1,187 @@
-"""Main issue processor orchestrator."""
+"""
+Issue processor - Handles GitHub issue processing workflow.
 
-import json
+This module processes GitHub issues by converting them to goals,
+using the core code editor, and creating pull requests.
+"""
+
 import logging
-import tempfile
-from pathlib import Path
 
 from .config import Config
+from .core import ChangeSet, CodeEditor, Goal, Repo
 from .github_client import GitHubClient
 from .llm_client import LLMClient
-from .models import ProcessingResult, PullRequest
-from .test_runner import SipTestResult, SipTestRunner
-
-
-class TestFailureError(Exception):
-    """Exception raised when tests fail during solution validation."""
-
-    pass
+from .models import GitHubIssue, ProcessingResult
 
 
 class IssueProcessor:
-    """Main orchestrator for processing GitHub issues."""
+    """
+    Processes GitHub issues end-to-end.
+
+    This class:
+    1. Converts GitHub Issues to Goals
+    2. Converts GitHub repositories to Repos
+    3. Uses the core CodeEditor for processing
+    4. Converts ChangeSets back to GitHub PRs
+    """
 
     def __init__(self, config: Config):
+        """Initialize with GitHub and LLM clients."""
         self.config = config
         self.github = GitHubClient(config)
         self.llm = LLMClient(config)
-        self.test_runner = SipTestRunner()
+
+        # Create core code editor with LLM client
+        self.code_editor = CodeEditor(llm_client=self.llm, max_retry_attempts=config.max_retry_attempts)
+
         self.logger = logging.getLogger(__name__)
 
     def process_issue(self, repo: str, issue_number: int) -> ProcessingResult:
-        """Process a GitHub issue end-to-end with test-driven retry logic."""
+        """
+        Process a GitHub issue end-to-end.
+
+        This method orchestrates the workflow:
+        1. GitHub Issue -> Goal
+        2. GitHub Repository -> Repo
+        3. Core processing (Goal + Repo -> ChangeSet)
+        4. ChangeSet -> GitHub PR
+
+        Args:
+            repo: Repository name in format "owner/repo"
+            issue_number: GitHub issue number
+
+        Returns:
+            ProcessingResult with GitHub-specific information
+        """
         try:
-            self.logger.info(f"Processing issue #{issue_number} in {repo}")
+            self.logger.info(f"Processing GitHub issue #{issue_number} in {repo}")
 
-            # 1. Fetch the issue (unrecoverable if fails)
-            issue = self.github.get_issue(repo, issue_number)
-            self.logger.info(f"Fetched issue: {issue.title}")
+            # 1. Fetch GitHub issue and convert to Goal
+            github_issue = self.github.get_issue(repo, issue_number)
+            goal = self._issue_to_goal(github_issue)
+            self.logger.info(f"Converted issue to goal: {goal.description[:100]}...")
 
-            # 2. Get repository context (unrecoverable if fails)
-            repository_context = self._get_repository_context(repo)
+            # 2. Fetch GitHub repository and convert to Repo
+            github_repo = self._fetch_github_repo(repo)
+            core_repo = self._github_to_repo(repo, github_repo)
+            self.logger.info(f"Loaded repository with {len(core_repo.files)} files")
 
-            # 3. Analyze the issue with AI (unrecoverable if fails)
-            self.logger.info("Analyzing issue with AI...")
-            analysis = self.llm.analyze_issue(issue, repository_context)
-            self.logger.info(f"Analysis complete. Confidence: {analysis.confidence}")
+            # 3. Core processing (platform-agnostic)
+            changeset = self.code_editor.process_goal(goal, core_repo)
+            self.logger.info(f"Generated changeset with {len(changeset.files)} file changes")
 
-            # 4. Skip if confidence is too low (unrecoverable)
-            if analysis.confidence < 0.3:
-                self.logger.warning(f"Low confidence ({analysis.confidence}), skipping automated solution")
-                return ProcessingResult(
-                    issue=issue,
-                    analysis=analysis,
-                    pull_request=None,
-                    success=False,
-                    error_message=f"Confidence too low: {analysis.confidence}",
-                )
+            # 4. Convert changeset to GitHub PR
+            pr_url = self._changeset_to_github_pr(repo, changeset, issue_number)
+            self.logger.info(f"Created GitHub PR: {pr_url}")
 
-            # 5. Generate and test solution with retry logic
-            pull_request: PullRequest | None = None
-            previous_attempt = None
-            last_error = None
+            # 5. Convert back to GitHub-specific result format
+            # Create a PullRequest object for compatibility
+            from .models import CodeChange, PullRequest
 
-            for attempt in range(self.config.max_retry_attempts):
-                self.logger.info(f"Generating solution (attempt {attempt + 1}/{self.config.max_retry_attempts})...")
-
-                try:
-                    # Get relevant file contents (recoverable error)
-                    file_contents = self._get_relevant_files(repo, analysis.files_to_modify)
-
-                    # Generate solution (recoverable error)
-                    pull_request = self.llm.generate_solution(
-                        issue, analysis, file_contents, previous_attempt, last_error
+            # Convert changeset files to CodeChange objects
+            code_changes = []
+            for file_change in changeset.files:
+                code_changes.append(
+                    CodeChange(
+                        file_path=file_change.path,
+                        change_type="create" if not file_change.exists else "modify",
+                        content=file_change.content,
+                        description=f"Update {file_change.path}",
                     )
-
-                    if not pull_request or not pull_request.changes:
-                        raise ValueError("No changes generated by LLM")
-
-                    # Test the solution before committing (recoverable error)
-                    test_result = self._test_solution_in_temp_repo(repo, pull_request)
-
-                    if test_result.success:
-                        self.logger.info("✅ Tests passed! Proceeding with commit...")
-                        break
-                    else:
-                        # Test failure - prepare for retry
-                        raise TestFailureError(f"Tests failed: {self.test_runner.format_test_failure(test_result)}")
-
-                except Exception as e:
-                    self.logger.warning(f"❌ Attempt {attempt + 1} failed: {str(e)}")
-
-                    # Check if this is an unrecoverable error
-                    if self._is_unrecoverable_error(e):
-                        return ProcessingResult(
-                            issue=issue,
-                            analysis=analysis,
-                            pull_request=pull_request,
-                            success=False,
-                            error_message=f"Unrecoverable error: {str(e)}",
-                        )
-
-                    # Prepare context for next attempt
-                    if pull_request:
-                        previous_attempt = json.dumps(
-                            {
-                                "title": pull_request.title,
-                                "body": pull_request.body,
-                                "changes": [
-                                    {
-                                        "file_path": change.file_path,
-                                        "change_type": change.change_type,
-                                        "description": change.description,
-                                        "content": change.content[:500] + "..."
-                                        if len(change.content) > 500
-                                        else change.content,
-                                    }
-                                    for change in pull_request.changes
-                                ],
-                            },
-                            indent=2,
-                        )
-
-                    last_error = str(e)
-
-                    if attempt == self.config.max_retry_attempts - 1:
-                        return ProcessingResult(
-                            issue=issue,
-                            analysis=analysis,
-                            pull_request=pull_request,
-                            success=False,
-                            error_message=(
-                                f"Failed after {self.config.max_retry_attempts} attempts. Last error: {last_error}"
-                            ),
-                        )
-
-            # Ensure we have a valid pull request after the retry loop
-            if pull_request is None:
-                return ProcessingResult(
-                    issue=issue,
-                    analysis=analysis,
-                    pull_request=None,
-                    success=False,
-                    error_message="Failed to generate a valid solution after all retry attempts",
                 )
 
-            # 6. Create branch and commit changes (tests passed)
-            self.logger.info(f"Creating branch: {pull_request.branch_name}")
-            self.github.create_branch(repo, pull_request.branch_name)
+            mock_pr = PullRequest(
+                title=changeset.summary,
+                body=f"{changeset.description}\n\nCloses #{issue_number}",
+                branch_name=changeset.branch_name or f"sip/issue-{issue_number}",
+                changes=code_changes,
+            )
 
-            commit_message = f"SIP: {pull_request.title}\n\nAddresses issue #{issue_number}\n\n✅ All tests pass"
-            self.github.commit_changes(repo, pull_request.branch_name, pull_request.changes, commit_message)
-
-            # 7. Create pull request
-            self.logger.info("Creating pull request...")
-            pr_url = self.github.create_pull_request(repo, pull_request)
-            self.logger.info(f"Pull request created: {pr_url}")
-
-            return ProcessingResult(issue=issue, analysis=analysis, pull_request=pull_request, success=True)
+            return ProcessingResult(
+                success=True,
+                pull_request=mock_pr,
+                error_message=None,
+            )
 
         except Exception as e:
-            self.logger.error(f"Error processing issue #{issue_number}: {str(e)}", exc_info=True)
+            self.logger.error(f"Failed to process issue #{issue_number}: {str(e)}")
             return ProcessingResult(
-                issue=issue if "issue" in locals() else None,
-                analysis=analysis if "analysis" in locals() else None,
-                pull_request=None,
                 success=False,
+                pull_request=None,
                 error_message=str(e),
             )
 
-    def _get_repository_context(self, repo: str) -> str:
-        """Get context about the repository structure and purpose."""
-        try:
-            # Get key files for context
-            context_files = ["README.md", "PROJECT.md", "pyproject.toml", "requirements.txt"]
-            context = f"Repository: {repo}\n\n"
+    def _issue_to_goal(self, issue: GitHubIssue) -> Goal:
+        """Convert a GitHub issue to a core Goal."""
+        # Combine title and body for full context
+        description = f"{issue.title}\n\n{issue.body}" if issue.body else issue.title
 
-            for file_path in context_files:
-                try:
-                    content = self.github.get_file_content(repo, file_path)
-                    if content:
-                        context += f"--- {file_path} ---\n{content[:1000]}...\n\n"
-                except Exception:
-                    continue
+        return Goal(
+            description=description,
+            context=f"Repository: {issue.repository}",
+            priority="high" if "urgent" in issue.labels else "normal",
+            tags=issue.labels,
+        )
 
-            # Get directory structure
-            try:
-                files = self.github.list_repository_files(repo)
-                # Filter to important files only
-                important_extensions = [".py", ".md", ".yml", ".yaml", ".toml", ".txt"]
-                important_files = [f for f in files if any(f.endswith(ext) for ext in important_extensions)]
-                context += "--- File Structure ---\n"
-                context += "\n".join(important_files[:50])  # Limit to first 50 files
-            except Exception:
-                pass
-
-            return context
-
-        except Exception as e:
-            self.logger.warning(f"Could not get repository context: {str(e)}")
-            return f"Repository: {repo}\nContext unavailable due to error: {str(e)}"
-
-    def _get_relevant_files(self, repo: str, file_paths: list[str]) -> dict[str, str]:
-        """Get content of relevant files for the issue."""
-        file_contents = {}
+    def _fetch_github_repo(self, repo: str) -> dict[str, str]:
+        """Fetch repository files from GitHub."""
+        # Get list of files and then fetch their content
+        files = {}
+        file_paths = self.github.list_repository_files(repo)
 
         for file_path in file_paths:
             try:
                 content = self.github.get_file_content(repo, file_path)
-                if content and len(content) <= self.config.max_file_size:
-                    file_contents[file_path] = content
-                elif len(content) > self.config.max_file_size:
-                    # Truncate large files
-                    file_contents[file_path] = content[: self.config.max_file_size] + "\n... (truncated)"
-                    self.logger.warning(f"File {file_path} truncated due to size")
+                files[file_path] = content
             except Exception as e:
-                self.logger.warning(f"Could not get content for {file_path}: {str(e)}")
-                file_contents[file_path] = f"# Error reading file: {str(e)}"
+                self.logger.warning(f"Could not fetch {file_path}: {e}")
+                continue
 
-        return file_contents
+        return files
 
-    def _test_solution_in_temp_repo(self, repo: str, pull_request: PullRequest) -> SipTestResult:
-        """Test the solution in a temporary repository clone."""
+    def _github_to_repo(self, repo_name: str, github_files: dict[str, str]) -> Repo:
+        """Convert GitHub repository data to core Repo."""
+        return Repo(
+            name=repo_name,
+            files=github_files,
+            metadata={
+                "repository": repo_name,
+                "platform": "github",
+            },
+        )
 
-        with tempfile.TemporaryDirectory() as temp_dir:
-            try:
-                # Clone the repository
-                import subprocess
+    def _changeset_to_github_pr(self, repo: str, changeset: ChangeSet, issue_number: int) -> str:
+        """Convert a ChangeSet to a GitHub pull request and return the PR URL."""
+        from .models import CodeChange, PullRequest
 
-                clone_url = f"https://github.com/{repo}.git"
-                subprocess.run(
-                    ["git", "clone", clone_url, temp_dir],
-                    check=True,
-                    capture_output=True,
-                    text=True,
+        # Convert changeset files to CodeChange objects
+        code_changes = []
+        for file_change in changeset.files:
+            code_changes.append(
+                CodeChange(
+                    file_path=file_change.path,
+                    change_type="create" if not file_change.exists else "modify",
+                    content=file_change.content,
+                    description=f"Update {file_change.path}",
                 )
+            )
 
-                # Apply the changes
-                for change in pull_request.changes:
-                    file_path = Path(temp_dir) / change.file_path
+        # Generate branch name if not provided
+        branch_name = changeset.branch_name or f"sip/issue-{issue_number}"
 
-                    if change.change_type == "create" or change.change_type == "modify":
-                        # Ensure directory exists
-                        file_path.parent.mkdir(parents=True, exist_ok=True)
-                        file_path.write_text(change.content)
-                    elif change.change_type == "delete":
-                        if file_path.exists():
-                            file_path.unlink()
+        # Create PullRequest object
+        pr = PullRequest(
+            title=changeset.summary,
+            body=f"{changeset.description}\n\nCloses #{issue_number}",
+            branch_name=branch_name,
+            changes=code_changes,
+        )
 
-                # Run tests
-                return self.test_runner.run_tests(cwd=temp_dir)
+        # First create the branch and commit changes
+        self.github.create_branch(repo, branch_name)
+        self.github.commit_changes(repo, branch_name, code_changes, changeset.summary)
 
-            except subprocess.CalledProcessError as e:
-                return SipTestResult(
-                    success=False,
-                    output="",
-                    error_output=f"Failed to clone repository: {e}",
-                    return_code=-1,
-                )
-            except Exception as e:
-                return SipTestResult(
-                    success=False,
-                    output="",
-                    error_output=f"Error testing solution: {e}",
-                    return_code=-1,
-                )
+        # Then create the pull request
+        pr_url = self.github.create_pull_request(repo, pr)
 
-    def _is_unrecoverable_error(self, error: Exception) -> bool:
-        """Determine if an error is unrecoverable and should not be retried.
-
-        Args:
-            error: The exception that occurred
-
-        Returns:
-            True if the error is unrecoverable, False if it should be retried
-        """
-        error_str = str(error).lower()
-
-        # Authentication and authorization errors
-        if "401" in error_str or "403" in error_str or "unauthorized" in error_str or "forbidden" in error_str:
-            return True
-
-        # Repository or resource not found
-        if "404" in error_str or "not found" in error_str:
-            return True
-
-        # Invalid model or API configuration
-        if "invalid model" in error_str or "model not found" in error_str:
-            return True
-
-        # Permanent API errors
-        if "invalid api key" in error_str or "api key" in error_str and "invalid" in error_str:
-            return True
-
-        # Configuration errors
-        if isinstance(error, ValueError | TypeError) and any(
-            keyword in error_str for keyword in ["config", "configuration", "missing required", "invalid format"]
-        ):
-            return True
-
-        # All other errors are considered recoverable (network issues, temporary API failures, etc.)
-        return False
+        return pr_url

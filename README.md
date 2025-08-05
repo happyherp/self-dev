@@ -51,6 +51,35 @@ SIP (Self-Improving Program) is an AI-powered system that:
    sip process-issue 123
    ```
 
+### Local Development Mode
+
+For local development and testing, you can use the `process-local` command to work with local files without GitHub integration:
+
+1. **Create a goal file** describing what you want to accomplish:
+   ```bash
+   echo "Add a new function to calculate fibonacci numbers" > goal.md
+   ```
+
+2. **Process the goal against a local repository**:
+   ```bash
+   # Preview changes (default behavior)
+   sip process-local goal.md /path/to/your/repo
+   
+   # Apply changes to local files
+   sip process-local goal.md /path/to/your/repo --apply
+   ```
+
+**Benefits of Local Mode:**
+- 🚀 **Faster iteration**: No GitHub API calls or network dependencies
+- 🔧 **Development testing**: Test SIP's AI capabilities on local codebases
+- 📝 **Flexible goals**: Work with any text file describing your objectives
+- 🎯 **Precise control**: Preview changes before applying them
+
+**Requirements for Local Mode:**
+- Only requires `OPENROUTER_API_KEY` (no GitHub token needed)
+- Goal file can be any text file describing the desired changes
+- Repository directory must exist and contain the code to modify
+
 ### Development
 
 ```bash
