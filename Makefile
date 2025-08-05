@@ -57,6 +57,12 @@ qa: ## fix style, sort imports, check types
 lint: ## check code style with ruff
 	uv run ruff check src/ tests/
 
+lint-fix: ## fix linting issues with ruff
+	uv run ruff check src/ tests/ --fix
+
+format: ## format code with ruff
+	uv run ruff format src/ tests/
+
 format-check: ## check code formatting with ruff
 	uv run ruff format --check src/ tests/
 
@@ -166,3 +172,12 @@ build-check: build ## build package and verify contents
 
 install: clean ## install the package to the active Python's site-packages
 	python setup.py install
+
+install-pre-commit-hooks: ## install pre-commit hooks for quality checks
+	@mkdir -p .git/hooks
+	@echo '#!/bin/bash' > .git/hooks/pre-commit
+	@echo 'make run-pre-commit-checks' >> .git/hooks/pre-commit
+	@chmod +x .git/hooks/pre-commit
+
+run-pre-commit-checks: ## run pre-commit quality checks (used by git hook)
+	@git diff --cached --quiet || $(MAKE) ci
