@@ -11,7 +11,7 @@ A GitHub-native autonomous development system that processes issues via AI, crea
 
 ## Overview
 
-SIP (Self-Improving Program) is an AI-powered system that:
+SIP (Self-Improving Program) is an AI-powered autonomous development system that:
 
 1. **Monitors GitHub Issues**: Automatically detects new issues in repositories
 2. **Analyzes with AI**: Uses OpenRouter/Claude to understand the issue and codebase
