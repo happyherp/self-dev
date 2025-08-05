@@ -96,10 +96,10 @@ make test-all
 ## Common Issues & Solutions
 
 ### CI Failures
-1. **Linting errors**: Run `make qa` to auto-fix most issues
+1. **Linting errors**: Run `make lint-fix` or `make qa` to auto-fix most issues
 2. **Type errors**: Check `mypy` output and fix type annotations
 3. **Test failures**: Run `make test-unit` locally to debug
-4. **Format issues**: Run `uv run ruff format .` to fix formatting
+4. **Format issues**: Run `make format` to fix formatting
 
 ### Integration Test Issues
 - Ensure `AGENT_GITHUB_TOKEN` and `OPENROUTER_API_KEY` are set

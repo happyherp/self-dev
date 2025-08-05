@@ -57,6 +57,12 @@ qa: ## fix style, sort imports, check types
 lint: ## check code style with ruff
 	uv run ruff check src/ tests/
 
+lint-fix: ## fix linting issues with ruff
+	uv run ruff check src/ tests/ --fix
+
+format: ## format code with ruff
+	uv run ruff format src/ tests/
+
 format-check: ## check code formatting with ruff
 	uv run ruff format --check src/ tests/
 
