@@ -98,8 +98,7 @@ security: ## run security checks
 	@echo "🔒 Running security checks..."
 	@uv run python scripts/security_check.py
 
-ci_for-github-ci-yml: ## run all CI checks (called by .github/workflows/ci.yml)
-	@echo "🔍 Running CI pipeline for GitHub CI workflow..."
+ci-goal: ## core CI pipeline implementation (called by all ci_for-* targets)
 	@echo "📋 Step 1: Generating OpenHands repo documentation..."
 	@$(MAKE) generate-openhands-repo
 	@echo "✅ OpenHands repo documentation generated"
@@ -115,42 +114,18 @@ ci_for-github-ci-yml: ## run all CI checks (called by .github/workflows/ci.yml)
 	@echo "📋 Step 5: Running tests with coverage..."
 	@$(MAKE) test-unit
 	@echo "✅ All CI checks passed! 🎉"
+
+ci_for-github-ci-yml: ## run all CI checks (called by .github/workflows/ci.yml)
+	@echo "🔍 Running CI pipeline for GitHub CI workflow..."
+	@$(MAKE) ci-goal
 
 ci_for-developers: ## run all CI checks locally (called by developers)
 	@echo "🔍 Running CI pipeline locally..."
-	@echo "📋 Step 1: Generating OpenHands repo documentation..."
-	@$(MAKE) generate-openhands-repo
-	@echo "✅ OpenHands repo documentation generated"
-	@echo "📋 Step 2: Linting with ruff..."
-	@$(MAKE) lint
-	@echo "✅ Linting passed"
-	@echo "📋 Step 3: Format check with ruff..."
-	@$(MAKE) format-check
-	@echo "✅ Format check passed"
-	@echo "📋 Step 4: Type checking with mypy..."
-	@$(MAKE) typecheck
-	@echo "✅ Type checking passed"
-	@echo "📋 Step 5: Running tests with coverage..."
-	@$(MAKE) test-unit
-	@echo "✅ All CI checks passed! 🎉"
+	@$(MAKE) ci-goal
 
 ci_for-setup: ## run all CI checks during setup (called internally by setup targets)
 	@echo "🔍 Running CI pipeline for setup verification..."
-	@echo "📋 Step 1: Generating OpenHands repo documentation..."
-	@$(MAKE) generate-openhands-repo
-	@echo "✅ OpenHands repo documentation generated"
-	@echo "📋 Step 2: Linting with ruff..."
-	@$(MAKE) lint
-	@echo "✅ Linting passed"
-	@echo "📋 Step 3: Format check with ruff..."
-	@$(MAKE) format-check
-	@echo "✅ Format check passed"
-	@echo "📋 Step 4: Type checking with mypy..."
-	@$(MAKE) typecheck
-	@echo "✅ Type checking passed"
-	@echo "📋 Step 5: Running tests with coverage..."
-	@$(MAKE) test-unit
-	@echo "✅ All CI checks passed! 🎉"
+	@$(MAKE) ci-goal
 
 # Legacy alias for backwards compatibility
 ci: ci_for-developers ## alias for ci_for-developers (backwards compatibility)
