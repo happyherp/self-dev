@@ -62,7 +62,21 @@ make test
 
 # Run quality checks
 make qa
+
+# Run full CI pipeline (required before committing)
+make ci
 ```
+
+#### OpenHands Development Automation
+
+For OpenHands users, automated development tools are available:
+
+```bash
+# Set up development environment with pre-commit hooks
+./.openhands/setup.sh
+```
+
+This installs a pre-commit hook that automatically runs `make ci` before every commit, ensuring code quality standards are maintained. See [`.openhands/README.md`](.openhands/README.md) for details.
 
 ## Documentation
 
