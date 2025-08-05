@@ -4,9 +4,5 @@
 
 set -e
 
-echo "🔍 Running OpenHands pre-commit checks..."
-
-# Run the CI pipeline to ensure code quality
-make ci_for-developers
-
-echo "✅ Pre-commit checks passed!"
+# Run the OpenHands-specific pre-commit checks
+make run-pre-commit_for-openhands
