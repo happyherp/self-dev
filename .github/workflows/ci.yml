@@ -28,7 +28,7 @@ jobs:
       run: uv sync --extra test
 
     - name: Run CI checks
-      run: make ci_for-github-actions
+      run: make ci_for-github-ci-yml
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v4

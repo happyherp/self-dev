@@ -97,8 +97,8 @@ security: ## run security checks
 	@echo "🔒 Running security checks..."
 	@uv run python scripts/security_check.py
 
-ci_for-github-actions: ## run all CI checks (called by GitHub Actions)
-	@echo "🔍 Running CI pipeline for GitHub Actions..."
+ci_for-github-ci-yml: ## run all CI checks (called by .github/workflows/ci.yml)
+	@echo "🔍 Running CI pipeline for GitHub CI workflow..."
 	@echo "📋 Step 1: Generating OpenHands repo documentation..."
 	@$(MAKE) generate-openhands-repo
 	@echo "✅ OpenHands repo documentation generated"
