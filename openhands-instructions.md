@@ -98,7 +98,7 @@ Silent failures prevent the AI from understanding what went wrong and learning f
 
 ### Integration Test Issues
 - Ensure environment variables are set
-- Use `make test-integration-optional` for graceful handling
+- Integration tests require `AGENT_GITHUB_TOKEN` and `OPENROUTER_API_KEY`
 
 ## Best Practices for AI Agents
 

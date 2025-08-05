@@ -229,9 +229,6 @@ install-pre-commit-hooks: ## install pre-commit hooks for quality checks
 run-pre-commit-checks_for-git-hooks: ## run pre-commit quality checks (called by git pre-commit hooks)
 	@git diff --cached --quiet || $(MAKE) ci_for-developers
 
-run-pre-commit-checks_for-openhands: ## run pre-commit quality checks (called by .openhands/pre-commit.sh)
-	@git diff --cached --quiet || $(MAKE) ci_for-developers
-
 setup_for-openhands: ## complete OpenHands development environment setup (called by .openhands/setup.sh)
 	@echo "🚀 Setting up OpenHands development environment..."
 	@uv sync --extra test
