@@ -136,24 +136,7 @@ class CodeEditor:
         # Format repository context for analysis
         repo_context = self._format_repo_context(repo)
 
-        # Check if LLM client has direct goal support
-        if hasattr(self.llm_client, "analyze_goal"):
-            analysis = self.llm_client.analyze_goal(goal, repo_context)
-        else:
-            # Convert Goal to GitHubIssue format for legacy LLM clients
-            from .models import GitHubIssue
-
-            mock_issue = GitHubIssue(
-                number=0,
-                title=goal.description.split("\n")[0][:100],
-                body=goal.description,
-                author="system",
-                labels=goal.tags,
-                state="open",
-                html_url="",
-                repository=repo.metadata.get("repository", "unknown/repo"),
-            )
-            analysis = self.llm_client.analyze_issue(mock_issue, repo_context)
+        analysis = self.llm_client.analyze_goal(goal, repo_context)
 
         # Convert to core analysis result if needed
         if hasattr(analysis, "model_dump"):
@@ -175,27 +158,7 @@ class CodeEditor:
         # Get relevant file contents
         file_contents = self._get_relevant_files(repo, analysis.files_to_modify)
 
-        # Try the new Goal-based interface first, fall back to legacy GitHubIssue interface
-        try:
-            # New interface: generate_solution(goal, analysis, file_contents, ...)
-            changeset = self.llm_client.generate_solution(goal, analysis, file_contents, previous_attempt, last_error)
-        except (TypeError, AttributeError):
-            # Legacy interface: generate_solution(issue, analysis, file_contents, ...)
-            from .models import GitHubIssue
-
-            mock_issue = GitHubIssue(
-                number=0,
-                title=goal.description.split("\n")[0][:100],
-                body=goal.description,
-                author="system",
-                labels=goal.tags,
-                state="open",
-                html_url="",
-                repository=repo.metadata.get("repository", "unknown/repo"),
-            )
-            changeset = self.llm_client.generate_solution(
-                mock_issue, analysis, file_contents, previous_attempt, last_error
-            )
+        changeset = self.llm_client.generate_solution(goal, analysis, file_contents, previous_attempt, last_error)
 
         # Convert to core changeset if needed
         if hasattr(changeset, "model_dump"):
