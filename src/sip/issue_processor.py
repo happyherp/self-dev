@@ -110,7 +110,7 @@ class IssueProcessor:
                 body=f"{changeset.description}\n\nCloses #{issue_number}",
                 branch_name=changeset.branch_name or f"sip/issue-{issue_number}",
                 changes=code_changes,
-                base_branch=branch,
+                base_branch=branch or "main",
             )
 
             return ProcessingResult(
