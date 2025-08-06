@@ -63,3 +63,51 @@ class ProcessingResult(BaseModel):
     pull_request: PullRequest | None = Field(default=None, description="Generated pull request")
     success: bool = Field(description="Whether processing was successful")
     error_message: str | None = Field(default=None, description="Error message if processing failed")
+
+
+# Core models - Platform-agnostic representations
+
+
+class Goal(BaseModel):
+    """Platform-agnostic representation of what needs to be accomplished."""
+
+    description: str = Field(description="What to accomplish")
+    context: str = Field(default="", description="Additional context about the codebase")
+    priority: str = Field(default="normal", description="Priority: low, normal, high")
+    tags: list[str] = Field(default_factory=list, description="Optional categorization")
+
+
+class FileContent(BaseModel):
+    """Represents a file in the repository."""
+
+    path: str = Field(description="File path relative to repository root")
+    content: str = Field(description="Complete file content")
+    exists: bool = Field(default=True, description="Whether the file currently exists")
+
+
+class ChangeSet(BaseModel):
+    """Platform-agnostic representation of changes to make."""
+
+    summary: str = Field(description="Brief summary of changes")
+    description: str = Field(description="Detailed description of changes")
+    files: list[FileContent] = Field(description="Complete file contents after changes")
+    branch_name: str = Field(default="", description="Suggested branch name")
+    test_command: str | None = Field(default=None, description="How to test these changes")
+
+
+class Repo(BaseModel):
+    """Abstract repository representation."""
+
+    name: str = Field(description="Repository name or identifier")
+    files: dict[str, str] = Field(description="File path to content mapping")
+    metadata: dict[str, str] = Field(default_factory=dict, description="Additional repo info")
+
+
+class CoreAnalysisResult(BaseModel):
+    """Result of core analysis - platform-agnostic version of AnalysisResult."""
+
+    summary: str = Field(description="Brief summary of the goal")
+    problem_type: str = Field(description="Type: bug|feature|documentation|enhancement|other")
+    suggested_approach: str = Field(description="Detailed approach to solve the goal")
+    files_to_modify: list[str] = Field(description="List of files that need modification")
+    confidence: float = Field(ge=0.0, le=1.0, description="Confidence level between 0.0 and 1.0")
