@@ -6,6 +6,7 @@ using the core code editor, and creating pull requests.
 """
 
 import logging
+from typing import Any
 
 from .config import Config
 from .core import ChangeSet, CodeEditor, Goal, Repo
@@ -141,18 +142,13 @@ class IssueProcessor:
 
     def _fetch_github_repo(self, repo: str, branch: str = "main") -> dict[str, str]:
         """Fetch repository files from GitHub."""
-        # Get list of files and then fetch their content
-        files = {}
+        # Get list of files and then fetch their content efficiently
         file_paths = self.github.list_repository_files(repo, ref=branch)
 
-        for file_path in file_paths:
-            try:
-                content = self.github.get_file_content(repo, file_path, ref=branch)
-                files[file_path] = content
-            except Exception as e:
-                self.logger.warning(f"Could not fetch {file_path}: {e}")
-                continue
+        # Use the optimized method to fetch multiple files
+        files = self.github.get_multiple_file_contents(repo, file_paths, ref=branch)
 
+        self.logger.info(f"Successfully fetched {len(files)} files from {repo}")
         return files
 
     def _github_to_repo(self, repo_name: str, github_files: dict[str, str]) -> Repo:
@@ -204,3 +200,26 @@ class IssueProcessor:
         pr_url = self.github.create_pull_request(repo, pr)
 
         return pr_url
+
+    def process_github_issue_directly(
+        self, repo: str, github_issue: Any, branch: str | None = None
+    ) -> ProcessingResult:
+        """
+        Process a PyGithub Issue object directly.
+
+        This is a convenience method for users who already have PyGithub Issue objects
+        and want to avoid the conversion overhead.
+
+        Args:
+            repo: Repository name in format "owner/repo"
+            github_issue: PyGithub Issue object
+            branch: Branch to analyze and create PR from (defaults to current git branch)
+
+        Returns:
+            ProcessingResult with GitHub-specific information
+        """
+        # Convert PyGithub Issue to our GitHubIssue model
+        issue = self.github.issue_from_github_issue(github_issue, repo)
+
+        # Use the regular processing workflow
+        return self.process_issue(repo, issue.number, branch)

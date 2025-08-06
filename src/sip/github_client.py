@@ -3,7 +3,10 @@
 from typing import Any
 
 from github import Auth, Github
-from github.GithubException import UnknownObjectException
+from github.GithubException import GithubException, RateLimitExceededException, UnknownObjectException
+from github.Issue import Issue
+from github.PullRequest import PullRequest as GithubPullRequest
+from github.Repository import Repository
 
 from .config import Config
 from .models import CodeChange, GitHubIssue, PullRequest
@@ -15,28 +18,54 @@ class GitHubClient:
     def __init__(self, config: Config):
         self.config = config
         auth = Auth.Token(config.github_token)
-        self.github = Github(auth=auth)
+        # Enable per_page optimization for better performance
+        self.github = Github(auth=auth, per_page=100)
+        self._repo_cache: dict[str, Repository] = {}
+
+    def _get_repository(self, repo: str) -> Repository:
+        """Get repository with caching."""
+        if repo not in self._repo_cache:
+            self._repo_cache[repo] = self.github.get_repo(repo)
+        return self._repo_cache[repo]
+
+    # Direct PyGithub object access methods
+    def get_github_issue(self, repo: str, issue_number: int) -> Issue:
+        """Get PyGithub Issue object directly."""
+        repository = self._get_repository(repo)
+        return repository.get_issue(issue_number)
+
+    def get_github_repository(self, repo: str) -> Repository:
+        """Get PyGithub Repository object directly."""
+        return self._get_repository(repo)
+
+    def get_github_pull_request(self, repo: str, pr_number: int) -> GithubPullRequest:
+        """Get PyGithub PullRequest object directly."""
+        repository = self._get_repository(repo)
+        return repository.get_pull(pr_number)
+
+    # Convenience methods that work with PyGithub objects
+    def issue_from_github_issue(self, github_issue: Issue, repo: str) -> GitHubIssue:
+        """Convert PyGithub Issue to our GitHubIssue model."""
+        return GitHubIssue(
+            number=github_issue.number,
+            title=github_issue.title,
+            body=github_issue.body or "",
+            author=github_issue.user.login,
+            labels=[label.name for label in github_issue.labels],
+            state=github_issue.state,
+            html_url=github_issue.html_url,
+            repository=repo,
+        )
 
     def get_issue(self, repo: str, issue_number: int) -> GitHubIssue:
         """Fetch an issue from GitHub."""
-        repository = self.github.get_repo(repo)
-        issue = repository.get_issue(issue_number)
-
-        return GitHubIssue(
-            number=issue.number,
-            title=issue.title,
-            body=issue.body or "",
-            author=issue.user.login,
-            labels=[label.name for label in issue.labels],
-            state=issue.state,
-            html_url=issue.html_url,
-            repository=repo,
-        )
+        github_issue = self.get_github_issue(repo, issue_number)
+        return self.issue_from_github_issue(github_issue, repo)
 
     def get_file_content(self, repo: str, path: str, ref: str = "main") -> str:
         """Get file content from repository."""
         try:
-            repository = self.github.get_repo(repo)
+            repository = self._get_repository(repo)
             file_content = repository.get_contents(path, ref=ref)
 
             if isinstance(file_content, list):
@@ -49,13 +78,13 @@ class GitHubClient:
 
     def create_branch(self, repo: str, branch_name: str, base_branch: str = "main") -> None:
         """Create a new branch."""
-        repository = self.github.get_repo(repo)
+        repository = self._get_repository(repo)
         base_ref = repository.get_git_ref(f"heads/{base_branch}")
         repository.create_git_ref(ref=f"refs/heads/{branch_name}", sha=base_ref.object.sha)
 
     def commit_changes(self, repo: str, branch: str, changes: list[CodeChange], message: str) -> None:
         """Commit changes to a branch."""
-        repository = self.github.get_repo(repo)
+        repository = self._get_repository(repo)
 
         for change in changes:
             if change.change_type == "create" or change.change_type == "modify":
@@ -88,14 +117,14 @@ class GitHubClient:
 
     def create_pull_request(self, repo: str, pr: PullRequest) -> str:
         """Create a pull request and return its URL."""
-        repository = self.github.get_repo(repo)
+        repository = self._get_repository(repo)
         pull_request = repository.create_pull(title=pr.title, body=pr.body, head=pr.branch_name, base=pr.base_branch)
         return pull_request.html_url
 
     def list_repository_files(self, repo: str, path: str = "", ref: str = "main") -> list[str]:
         """List files in repository directory."""
         try:
-            repository = self.github.get_repo(repo)
+            repository = self._get_repository(repo)
             contents = repository.get_contents(path, ref=ref)
 
             if not isinstance(contents, list):
@@ -117,7 +146,7 @@ class GitHubClient:
 
     def get_repository(self, repo: str) -> dict[str, Any]:
         """Get repository information from GitHub."""
-        repository = self.github.get_repo(repo)
+        repository = self._get_repository(repo)
         return {
             "id": repository.id,
             "name": repository.name,
@@ -137,3 +166,63 @@ class GitHubClient:
             "updated_at": repository.updated_at.isoformat() if repository.updated_at else None,
             "pushed_at": repository.pushed_at.isoformat() if repository.pushed_at else None,
         }
+
+    def get_rate_limit_info(self) -> dict[str, Any]:
+        """Get current rate limit information."""
+        rate_limit = self.github.get_rate_limit()
+        # Access rate limit attributes safely
+        core_limit = getattr(rate_limit, "core", None)
+        search_limit = getattr(rate_limit, "search", None)
+
+        result = {}
+        if core_limit:
+            result["core"] = {
+                "limit": getattr(core_limit, "limit", 0),
+                "remaining": getattr(core_limit, "remaining", 0),
+                "reset": getattr(core_limit, "reset", None),
+            }
+        if search_limit:
+            result["search"] = {
+                "limit": getattr(search_limit, "limit", 0),
+                "remaining": getattr(search_limit, "remaining", 0),
+                "reset": getattr(search_limit, "reset", None),
+            }
+        return result
+
+    def handle_github_exception(self, e: GithubException) -> str:
+        """Convert GitHub exceptions to user-friendly error messages."""
+        if isinstance(e, RateLimitExceededException):
+            headers = getattr(e, "headers", {}) or {}
+            return f"GitHub API rate limit exceeded. Reset time: {headers.get('X-RateLimit-Reset', 'unknown')}"
+        elif isinstance(e, UnknownObjectException):
+            data = getattr(e, "data", {})
+            if isinstance(data, dict):
+                return f"GitHub resource not found: {data.get('message', 'Unknown error')}"
+            else:
+                return f"GitHub resource not found: {data or 'Unknown error'}"
+        else:
+            data = getattr(e, "data", {})
+            if isinstance(data, dict):
+                return f"GitHub API error: {data.get('message', str(e))}"
+            else:
+                return f"GitHub API error: {data or str(e)}"
+
+    def get_multiple_file_contents(self, repo: str, file_paths: list[str], ref: str = "main") -> dict[str, str]:
+        """Get content of multiple files efficiently."""
+        repository = self._get_repository(repo)
+        contents = {}
+
+        for file_path in file_paths:
+            try:
+                file_content = repository.get_contents(file_path, ref=ref)
+                if not isinstance(file_content, list):
+                    contents[file_path] = file_content.decoded_content.decode("utf-8")
+            except UnknownObjectException:
+                # File doesn't exist, skip it
+                continue
+            except Exception as e:
+                # Log warning but continue with other files
+                print(f"Warning: Could not fetch {file_path}: {e}")
+                continue
+
+        return contents
