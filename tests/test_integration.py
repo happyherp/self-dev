@@ -242,7 +242,7 @@ class TestEndToEndIntegration:
             )
             mock_process_issue.return_value = mock_result
 
-            result = processor.process_issue("test/repo", 1)
+            result = processor.process_issue("test/repo", 1, "main")
 
             assert result.success is True
             assert result.issue == mock_issue
@@ -262,7 +262,7 @@ class TestEndToEndIntegration:
             mock_result = ProcessingResult(success=False, issue=mock_issue, error_message="Failed to process issue")
             mock_process_issue.return_value = mock_result
 
-            result = processor.process_issue("test/repo", 1)
+            result = processor.process_issue("test/repo", 1, "main")
 
             assert result.success is False
             assert result.error_message == "Failed to process issue"
