@@ -26,7 +26,6 @@ jobs:
       - name: Process Issue
         run: |
           source $HOME/.cargo/env
-          # SIP will automatically use the current git branch
           uv run python -m sip process-issue ${{ github.event.issue.number }}
         env:
           AGENT_GITHUB_TOKEN: ${{ secrets.AGENT_GITHUB_TOKEN }}
