@@ -25,8 +25,8 @@ dependencies = [
     "pydantic-ai>=0.0.14",
     "pydantic>=2.0.0",
     "openai>=1.0.0",
-    "httpx>=0.24.0",
     "filetype>=1.2.0",
+    "PyGithub>=2.1.0",
 ]
 requires-python = ">= 3.10"
 

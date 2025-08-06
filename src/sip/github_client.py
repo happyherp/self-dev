@@ -1,9 +1,9 @@
 """GitHub API client for SIP."""
 
-import base64
 from typing import Any
 
-import httpx
+from github import Auth, Github
+from github.GithubException import UnknownObjectException
 
 from .config import Config
 from .models import CodeChange, GitHubIssue, PullRequest
@@ -14,146 +14,126 @@ class GitHubClient:
 
     def __init__(self, config: Config):
         self.config = config
-        self.client = httpx.Client(
-            headers={
-                "Authorization": f"token {config.github_token}",
-                "Accept": "application/vnd.github.v3+json",
-                "User-Agent": "SIP-Bot/1.0",
-            }
-        )
+        auth = Auth.Token(config.github_token)
+        self.github = Github(auth=auth)
 
     def get_issue(self, repo: str, issue_number: int) -> GitHubIssue:
         """Fetch an issue from GitHub."""
-        url = f"https://api.github.com/repos/{repo}/issues/{issue_number}"
-        response = self.client.get(url)
-        response.raise_for_status()
+        repository = self.github.get_repo(repo)
+        issue = repository.get_issue(issue_number)
 
-        data = response.json()
         return GitHubIssue(
-            number=data["number"],
-            title=data["title"],
-            body=data["body"] or "",
-            author=data["user"]["login"],
-            labels=[label["name"] for label in data["labels"]],
-            state=data["state"],
-            html_url=data["html_url"],
+            number=issue.number,
+            title=issue.title,
+            body=issue.body or "",
+            author=issue.user.login,
+            labels=[label.name for label in issue.labels],
+            state=issue.state,
+            html_url=issue.html_url,
             repository=repo,
         )
 
     def get_file_content(self, repo: str, path: str, ref: str = "main") -> str:
         """Get file content from repository."""
-        url = f"https://api.github.com/repos/{repo}/contents/{path}"
-        params = {"ref": ref}
-        response = self.client.get(url, params=params)
+        try:
+            repository = self.github.get_repo(repo)
+            file_content = repository.get_contents(path, ref=ref)
 
-        if response.status_code == 404:
+            if isinstance(file_content, list):
+                # This is a directory, not a file
+                return ""
+
+            return file_content.decoded_content.decode("utf-8")
+        except UnknownObjectException:
             return ""  # File doesn't exist
-
-        response.raise_for_status()
-        data = response.json()
-
-        if data["encoding"] == "base64":
-            return base64.b64decode(data["content"]).decode("utf-8")
-        else:
-            return str(data["content"])
 
     def create_branch(self, repo: str, branch_name: str, base_branch: str = "main") -> None:
         """Create a new branch."""
-        # Get the SHA of the base branch
-        url = f"https://api.github.com/repos/{repo}/git/refs/heads/{base_branch}"
-        response = self.client.get(url)
-        response.raise_for_status()
-        base_sha = response.json()["object"]["sha"]
-
-        # Create new branch
-        url = f"https://api.github.com/repos/{repo}/git/refs"
-        data = {"ref": f"refs/heads/{branch_name}", "sha": base_sha}
-        response = self.client.post(url, json=data)
-        response.raise_for_status()
+        repository = self.github.get_repo(repo)
+        base_ref = repository.get_git_ref(f"heads/{base_branch}")
+        repository.create_git_ref(ref=f"refs/heads/{branch_name}", sha=base_ref.object.sha)
 
     def commit_changes(self, repo: str, branch: str, changes: list[CodeChange], message: str) -> None:
         """Commit changes to a branch."""
+        repository = self.github.get_repo(repo)
+
         for change in changes:
             if change.change_type == "create" or change.change_type == "modify":
-                self._update_file(repo, change.file_path, change.content, message, branch)
+                self._update_file(repository, change.file_path, change.content, message, branch)
             elif change.change_type == "delete":
-                self._delete_file(repo, change.file_path, message, branch)
+                self._delete_file(repository, change.file_path, message, branch)
 
-    def _update_file(self, repo: str, path: str, content: str, message: str, branch: str) -> None:
+    def _update_file(self, repository: Any, path: str, content: str, message: str, branch: str) -> None:
         """Update or create a file."""
-        url = f"https://api.github.com/repos/{repo}/contents/{path}"
-
-        # Try to get existing file to get its SHA
         try:
-            response = self.client.get(url, params={"ref": branch})
-            if response.status_code == 200:
-                existing_sha = response.json()["sha"]
-            else:
-                existing_sha = None
-        except Exception:
-            existing_sha = None
+            # Try to get existing file
+            existing_file = repository.get_contents(path, ref=branch)
+            if isinstance(existing_file, list):
+                # This shouldn't happen for a file, but handle it
+                raise UnknownObjectException(404, "File not found", None)
 
-        # Prepare the update
-        encoded_content = base64.b64encode(content.encode("utf-8")).decode("utf-8")
-        data = {"message": message, "content": encoded_content, "branch": branch}
+            # Update existing file
+            repository.update_file(path=path, message=message, content=content, sha=existing_file.sha, branch=branch)
+        except UnknownObjectException:
+            # File doesn't exist, create it
+            repository.create_file(path=path, message=message, content=content, branch=branch)
 
-        if existing_sha:
-            data["sha"] = existing_sha
-
-        response = self.client.put(url, json=data)
-        response.raise_for_status()
-
-    def _delete_file(self, repo: str, path: str, message: str, branch: str) -> None:
+    def _delete_file(self, repository: Any, path: str, message: str, branch: str) -> None:
         """Delete a file."""
-        url = f"https://api.github.com/repos/{repo}/contents/{path}"
+        existing_file = repository.get_contents(path, ref=branch)
+        if isinstance(existing_file, list):
+            raise ValueError(f"Cannot delete directory: {path}")
 
-        # Get file SHA
-        response = self.client.get(url, params={"ref": branch})
-        response.raise_for_status()
-        file_sha = response.json()["sha"]
-
-        # Delete file
-        data = {"message": message, "sha": file_sha, "branch": branch}
-        response = self.client.request("DELETE", url, json=data)
-        response.raise_for_status()
+        repository.delete_file(path=path, message=message, sha=existing_file.sha, branch=branch)
 
     def create_pull_request(self, repo: str, pr: PullRequest) -> str:
         """Create a pull request and return its URL."""
-        url = f"https://api.github.com/repos/{repo}/pulls"
-        data = {"title": pr.title, "body": pr.body, "head": pr.branch_name, "base": pr.base_branch}
-
-        response = self.client.post(url, json=data)
-        response.raise_for_status()
-
-        return str(response.json()["html_url"])
+        repository = self.github.get_repo(repo)
+        pull_request = repository.create_pull(title=pr.title, body=pr.body, head=pr.branch_name, base=pr.base_branch)
+        return pull_request.html_url
 
     def list_repository_files(self, repo: str, path: str = "", ref: str = "main") -> list[str]:
         """List files in repository directory."""
-        url = f"https://api.github.com/repos/{repo}/contents/{path}"
-        params = {"ref": ref}
-        response = self.client.get(url, params=params)
+        try:
+            repository = self.github.get_repo(repo)
+            contents = repository.get_contents(path, ref=ref)
 
-        if response.status_code == 404:
+            if not isinstance(contents, list):
+                # Single file
+                return [contents.path] if contents.type == "file" else []
+
+            files = []
+            for item in contents:
+                if item.type == "file":
+                    files.append(item.path)
+                elif item.type == "dir":
+                    # Recursively get files from subdirectories
+                    subfiles = self.list_repository_files(repo, item.path, ref)
+                    files.extend(subfiles)
+
+            return files
+        except UnknownObjectException:
             return []
-
-        response.raise_for_status()
-        data = response.json()
-
-        files = []
-        for item in data:
-            if item["type"] == "file":
-                files.append(item["path"])
-            elif item["type"] == "dir":
-                # Recursively get files from subdirectories
-                subfiles = self.list_repository_files(repo, item["path"], ref)
-                files.extend(subfiles)
-
-        return files
 
     def get_repository(self, repo: str) -> dict[str, Any]:
         """Get repository information from GitHub."""
-        url = f"https://api.github.com/repos/{repo}"
-        response = self.client.get(url)
-        response.raise_for_status()
-        data: dict[str, Any] = response.json()
-        return data
+        repository = self.github.get_repo(repo)
+        return {
+            "id": repository.id,
+            "name": repository.name,
+            "full_name": repository.full_name,
+            "description": repository.description,
+            "html_url": repository.html_url,
+            "clone_url": repository.clone_url,
+            "ssh_url": repository.ssh_url,
+            "default_branch": repository.default_branch,
+            "language": repository.language,
+            "size": repository.size,
+            "stargazers_count": repository.stargazers_count,
+            "watchers_count": repository.watchers_count,
+            "forks_count": repository.forks_count,
+            "open_issues_count": repository.open_issues_count,
+            "created_at": repository.created_at.isoformat() if repository.created_at else None,
+            "updated_at": repository.updated_at.isoformat() if repository.updated_at else None,
+            "pushed_at": repository.pushed_at.isoformat() if repository.pushed_at else None,
+        }

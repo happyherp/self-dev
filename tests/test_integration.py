@@ -69,32 +69,41 @@ class TestGitHubClientIntegration:
         config = Config(github_token="test_token", openrouter_api_key="test_key")
         client = GitHubClient(config)
         assert client.config == config
-        assert "Authorization" in client.client.headers
-        assert client.client.headers["Authorization"] == "token test_token"
+        assert client.github is not None
 
     def test_github_client_get_issue(self):
         """Test GitHub client can fetch issues."""
         config = Config(github_token="test", openrouter_api_key="test")
         client = GitHubClient(config)
 
-        # Mock the client.get method
-        mock_response = Mock()
-        mock_response.json.return_value = {
-            "number": 1,
-            "title": "Test Issue",
-            "body": "Test body",
-            "state": "open",
-            "user": {"login": "test_user"},
-            "labels": [{"name": "bug"}],
-            "html_url": "https://github.com/test/repo/issues/1",
-        }
-        mock_response.raise_for_status.return_value = None
-        client.client.get = Mock(return_value=mock_response)
+        # Mock the PyGithub objects
+        mock_user = Mock()
+        mock_user.login = "test_user"
+
+        mock_label = Mock()
+        mock_label.name = "bug"
+
+        mock_issue = Mock()
+        mock_issue.number = 1
+        mock_issue.title = "Test Issue"
+        mock_issue.body = "Test body"
+        mock_issue.state = "open"
+        mock_issue.user = mock_user
+        mock_issue.labels = [mock_label]
+        mock_issue.html_url = "https://github.com/test/repo/issues/1"
+
+        mock_repo = Mock()
+        mock_repo.get_issue.return_value = mock_issue
+
+        client.github.get_repo = Mock(return_value=mock_repo)
 
         issue = client.get_issue("test/repo", 1)
         assert issue.number == 1
         assert issue.title == "Test Issue"
         assert issue.body == "Test body"
+        assert issue.author == "test_user"
+        assert issue.labels == ["bug"]
+        assert issue.state == "open"
 
 
 class TestLLMClientIntegration:
