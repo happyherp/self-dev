@@ -1,15 +1,12 @@
 #!/usr/bin/env python
 """Tests for CodeEditor persistent temporary directory functionality."""
 
-import os
-import tempfile
-from pathlib import Path
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 import pytest
 
 from sip.code_editor import CodeEditor
-from sip.models import ChangeSet, CoreAnalysisResult, FileContent, Goal, Repo
+from sip.models import ChangeSet, FileContent, Repo
 from sip.test_runner import SipTestResult
 
 
@@ -20,11 +17,7 @@ class TestCodeEditorPersistence:
         """Set up test fixtures."""
         self.mock_llm = Mock()
         self.mock_test_runner = Mock()
-        self.code_editor = CodeEditor(
-            llm_client=self.mock_llm,
-            test_runner=self.mock_test_runner,
-            max_retry_attempts=2
-        )
+        self.code_editor = CodeEditor(llm_client=self.mock_llm, test_runner=self.mock_test_runner, max_retry_attempts=2)
 
     def teardown_method(self):
         """Clean up after each test."""
@@ -38,8 +31,8 @@ class TestCodeEditorPersistence:
             files={
                 "main.py": "def main():\n    print('hello')\n",
                 "utils.py": "def helper():\n    return True\n",
-                "subdir/module.py": "class TestClass:\n    pass\n"
-            }
+                "subdir/module.py": "class TestClass:\n    pass\n",
+            },
         )
 
         # Initialize temp directory
@@ -133,8 +126,8 @@ class TestCodeEditorPersistence:
             files={
                 "main.py": "print('hello')",
                 "new_file.py": "def new_function():\n    pass\n",
-                "subdir/another.py": "# another file"
-            }
+                "subdir/another.py": "# another file",
+            },
         )
 
         # Initialize with initial repo
@@ -156,18 +149,14 @@ class TestCodeEditorPersistence:
     def test_sync_repo_changes_modified_files(self):
         """Test synchronizing modified files to temp directory."""
         initial_repo = Repo(
-            name="test-repo",
-            files={
-                "main.py": "print('hello')",
-                "utils.py": "def helper(): return False"
-            }
+            name="test-repo", files={"main.py": "print('hello')", "utils.py": "def helper(): return False"}
         )
         updated_repo = Repo(
             name="test-repo",
             files={
                 "main.py": "print('hello world')",  # Modified
-                "utils.py": "def helper(): return True"  # Modified
-            }
+                "utils.py": "def helper(): return True",  # Modified
+            },
         )
 
         # Initialize with initial repo
@@ -192,12 +181,12 @@ class TestCodeEditorPersistence:
             files={
                 "main.py": "print('hello')",
                 "to_delete.py": "# will be deleted",
-                "subdir/also_delete.py": "# also deleted"
-            }
+                "subdir/also_delete.py": "# also deleted",
+            },
         )
         updated_repo = Repo(
             name="test-repo",
-            files={"main.py": "print('hello')"}  # Other files removed
+            files={"main.py": "print('hello')"},  # Other files removed
         )
 
         # Initialize with initial repo
@@ -221,10 +210,7 @@ class TestCodeEditorPersistence:
         """Test applying changeset to temp directory."""
         repo = Repo(
             name="test-repo",
-            files={
-                "main.py": "def main():\n    print('hello')\n",
-                "utils.py": "def helper():\n    return False\n"
-            }
+            files={"main.py": "def main():\n    print('hello')\n", "utils.py": "def helper():\n    return False\n"},
         )
 
         changeset = ChangeSet(
@@ -233,8 +219,8 @@ class TestCodeEditorPersistence:
             files=[
                 FileContent(path="main.py", content="def main():\n    print('hello world')\n"),
                 FileContent(path="utils.py", content="def helper():\n    return True\n"),
-                FileContent(path="new_module.py", content="class NewClass:\n    pass\n", exists=False)
-            ]
+                FileContent(path="new_module.py", content="class NewClass:\n    pass\n", exists=False),
+            ],
         )
 
         # Initialize temp directory
@@ -258,7 +244,7 @@ class TestCodeEditorPersistence:
             description="File content is the same",
             files=[
                 FileContent(path="unchanged.py", content="# unchanged content")  # Same content
-            ]
+            ],
         )
 
         # Initialize temp directory
@@ -282,25 +268,18 @@ class TestCodeEditorPersistence:
             name="test-repo",
             files={
                 "main.py": "def main():\n    return 'hello'\n",
-                "test_main.py": "from main import main\n\ndef test_main():\n    assert main() == 'hello'\n"
-            }
+                "test_main.py": "from main import main\n\ndef test_main():\n    assert main() == 'hello'\n",
+            },
         )
 
         changeset = ChangeSet(
             summary="Update main function",
             description="Change return value",
-            files=[
-                FileContent(path="main.py", content="def main():\n    return 'hello world'\n")
-            ]
+            files=[FileContent(path="main.py", content="def main():\n    return 'hello world'\n")],
         )
 
         # Mock successful test result
-        mock_test_result = SipTestResult(
-            success=True,
-            output="All tests passed",
-            error_output="",
-            return_code=0
-        )
+        mock_test_result = SipTestResult(success=True, output="All tests passed", error_output="", return_code=0)
         self.mock_test_runner.run_tests.return_value = mock_test_result
 
         # Test the changes
@@ -309,7 +288,7 @@ class TestCodeEditorPersistence:
         # Verify test was called with correct directory
         assert self.mock_test_runner.run_tests.called
         call_args = self.mock_test_runner.run_tests.call_args
-        assert call_args[1]['cwd'] == str(self.code_editor._temp_dir)
+        assert call_args[1]["cwd"] == str(self.code_editor._temp_dir)
 
         # Verify result
         assert result.success is True
@@ -327,13 +306,13 @@ class TestCodeEditorPersistence:
         changeset1 = ChangeSet(
             summary="First change",
             description="First change",
-            files=[FileContent(path="main.py", content="def main(): return 1")]
+            files=[FileContent(path="main.py", content="def main(): return 1")],
         )
 
         changeset2 = ChangeSet(
             summary="Second change",
             description="Second change",
-            files=[FileContent(path="main.py", content="def main(): return 2")]
+            files=[FileContent(path="main.py", content="def main(): return 2")],
         )
 
         # Mock successful test results
@@ -358,7 +337,7 @@ class TestCodeEditorPersistence:
         # Verify test runner was called twice with same directory
         assert self.mock_test_runner.run_tests.call_count == 2
         for call in self.mock_test_runner.run_tests.call_args_list:
-            assert call[1]['cwd'] == str(first_temp_dir)
+            assert call[1]["cwd"] == str(first_temp_dir)
 
     def test_temp_dir_survives_failed_tests(self):
         """Test that temp directory persists even when tests fail."""
@@ -367,16 +346,11 @@ class TestCodeEditorPersistence:
         changeset = ChangeSet(
             summary="Failing change",
             description="This will fail tests",
-            files=[FileContent(path="main.py", content="def main(): raise Exception('fail')")]
+            files=[FileContent(path="main.py", content="def main(): raise Exception('fail')")],
         )
 
         # Mock failed test result
-        mock_test_result = SipTestResult(
-            success=False,
-            output="",
-            error_output="Test failed",
-            return_code=1
-        )
+        mock_test_result = SipTestResult(success=False, output="", error_output="Test failed", return_code=1)
         self.mock_test_runner.run_tests.return_value = mock_test_result
 
         # Test the changes (should not raise exception)
@@ -411,8 +385,8 @@ class TestCodeEditorPersistence:
         repo = Repo(name="test-repo", files={"test.py": "# test"})
 
         # Mock tempfile.mkdtemp to raise an exception
-        with pytest.raises(Exception):
-            with pytest.mock.patch('tempfile.mkdtemp', side_effect=OSError("Permission denied")):
+        with pytest.raises(OSError):
+            with patch("tempfile.mkdtemp", side_effect=OSError("Permission denied")):
                 self.code_editor._initialize_temp_dir(repo)
 
         # Verify state is clean after failed initialization
