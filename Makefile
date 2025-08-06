@@ -24,6 +24,23 @@ export PRINT_HELP_PYSCRIPT
 
 BROWSER := python -c "$$BROWSER_PYSCRIPT"
 
+# NAMING CONVENTION FOR MAKEFILE GOALS:
+# Goals that are called from external sources (not from within this Makefile) should follow
+# the pattern: ACTION_for-USE-CASE
+# 
+# Examples:
+#   - setup_for-openhands: called by .openhands/setup.sh
+#   - ci_for-github-ci-yml: called by .github/workflows/ci.yml
+#   - ci_for-developers: called by developers locally
+#   - check-code_for-self: called by test_runner for self-improvement
+#   - run-pre-commit-checks_for-git-hooks: called by git pre-commit hooks
+#
+# This convention helps distinguish between:
+#   - Internal goals (used only within this Makefile)
+#   - External goals (called from scripts, CI, or other external sources)
+#
+# When adding new goals that will be called externally, please follow this pattern.
+
 help:
 	@python -c "$$PRINT_HELP_PYSCRIPT" < $(MAKEFILE_LIST)
 
@@ -202,15 +219,13 @@ install-pre-commit-hooks: ## install pre-commit hooks for quality checks
 	@chmod +x .git/hooks/pre-commit
 
 run-pre-commit-checks_for-git-hooks: ## run pre-commit quality checks (called by git pre-commit hooks)
-	@git diff --cached --quiet || $(MAKE) ci_for-developers
+	@git diff --cached --quiet || ($(MAKE) generate-openhands-repo && $(MAKE) ci_for-developers)
 
 setup_for-openhands: ## complete OpenHands development environment setup (called by .openhands/setup.sh)
 	@echo "🚀 Setting up OpenHands development environment..."
 	@uv sync --extra test
 	@echo "🔧 Installing pre-commit hooks..."
 	@$(MAKE) install-pre-commit-hooks
-	@echo "📝 Generating OpenHands repository documentation..."
-	@$(MAKE) generate-openhands-repo
 	@echo "🎉 OpenHands development environment setup complete!"
 
 generate-openhands-repo: ## generate .openhands/repo.md from source files
