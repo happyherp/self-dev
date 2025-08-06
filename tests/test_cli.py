@@ -2,6 +2,7 @@
 """Tests for SIP CLI."""
 
 import os
+from typing import Any
 from unittest.mock import Mock, patch
 
 from click.testing import CliRunner
@@ -10,7 +11,7 @@ from sip.cli import main
 from sip.models import AnalysisResult, GitHubIssue, ProcessingResult
 
 
-def create_test_issue(number=1, title="Test Issue", body="Test body"):
+def create_test_issue(number: int = 1, title: str = "Test Issue", body: str = "Test body") -> GitHubIssue:
     """Helper to create a test GitHubIssue with all required fields."""
     return GitHubIssue(
         number=number,
@@ -27,7 +28,7 @@ def create_test_issue(number=1, title="Test Issue", body="Test body"):
 class TestCLI:
     """Test CLI functionality."""
 
-    def test_cli_help(self):
+    def test_cli_help(self) -> None:
         """Test CLI help command."""
         runner = CliRunner()
         result = runner.invoke(main, ["--help"])
@@ -36,7 +37,7 @@ class TestCLI:
         assert "SIP" in result.output
         assert "process-issue" in result.output
 
-    def test_cli_missing_env_vars(self):
+    def test_cli_missing_env_vars(self) -> None:
         """Test CLI fails gracefully without environment variables."""
         runner = CliRunner()
 
@@ -46,7 +47,7 @@ class TestCLI:
             assert result.exit_code != 0
             assert "AGENT_GITHUB_TOKEN" in result.output or "environment variable" in result.output
 
-    def test_cli_missing_arguments(self):
+    def test_cli_missing_arguments(self) -> None:
         """Test CLI requires issue argument."""
         runner = CliRunner()
 
@@ -55,8 +56,14 @@ class TestCLI:
         assert result.exit_code != 0
 
     @patch("sip.cli.IssueProcessor")
-    def test_cli_successful_processing(self, mock_processor_class):
+    @patch("subprocess.run")
+    def test_cli_successful_processing(self, mock_subprocess_run: Any, mock_processor_class: Any) -> None:
         """Test CLI with successful issue processing."""
+        # Mock the git command to return a predictable branch name
+        mock_subprocess_result = Mock()
+        mock_subprocess_result.stdout = "test-branch"
+        mock_subprocess_run.return_value = mock_subprocess_result
+
         # Mock the processor
         mock_processor = Mock()
         mock_processor_class.return_value = mock_processor
@@ -80,10 +87,11 @@ class TestCLI:
 
             assert result.exit_code == 0
             assert "✅ Successfully processed issue #1" in result.output
-            mock_processor.process_issue.assert_called_once_with("test/repo", 1)
+            # The CLI now passes the branch parameter (mocked to return "test-branch")
+            mock_processor.process_issue.assert_called_once_with("test/repo", 1, "test-branch")
 
     @patch("sip.cli.IssueProcessor")
-    def test_cli_failed_processing(self, mock_processor_class):
+    def test_cli_failed_processing(self, mock_processor_class: Any) -> None:
         """Test CLI with failed issue processing."""
         # Mock the processor
         mock_processor = Mock()
@@ -105,7 +113,7 @@ class TestCLI:
             assert "Something went wrong" in result.output
 
     @patch("sip.cli.IssueProcessor")
-    def test_cli_exception_handling(self, mock_processor_class):
+    def test_cli_exception_handling(self, mock_processor_class: Any) -> None:
         """Test CLI handles exceptions gracefully."""
         # Mock the processor to raise an exception
         mock_processor = Mock()
@@ -121,7 +129,7 @@ class TestCLI:
             assert "💥 Fatal error: Unexpected error" in result.output
 
     @patch("sip.cli.IssueProcessor")
-    def test_cli_with_custom_config(self, mock_processor_class):
+    def test_cli_with_custom_config(self, mock_processor_class: Any) -> None:
         """Test CLI with custom configuration via environment variables."""
         mock_processor = Mock()
         mock_processor_class.return_value = mock_processor
