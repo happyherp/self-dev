@@ -30,13 +30,15 @@ def process_issue(issue_number: int, repo: str | None = None, branch: str | None
 
         # Use provided repo or default
         target_repo = repo or config.default_repository
-        
+
         # Default to current git branch if no branch specified
         if not branch:
             import subprocess
+
             try:
-                result = subprocess.run(['git', 'rev-parse', '--abbrev-ref', 'HEAD'], 
-                                      capture_output=True, text=True, check=True)
+                result = subprocess.run(
+                    ["git", "rev-parse", "--abbrev-ref", "HEAD"], capture_output=True, text=True, check=True
+                )
                 target_branch = result.stdout.strip()
             except (subprocess.CalledProcessError, FileNotFoundError):
                 target_branch = "main"  # Fallback if git command fails

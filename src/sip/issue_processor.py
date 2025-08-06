@@ -58,9 +58,11 @@ class IssueProcessor:
             # Determine target branch
             if not branch:
                 import subprocess
+
                 try:
-                    result = subprocess.run(['git', 'rev-parse', '--abbrev-ref', 'HEAD'], 
-                                          capture_output=True, text=True, check=True)
+                    result = subprocess.run(
+                        ["git", "rev-parse", "--abbrev-ref", "HEAD"], capture_output=True, text=True, check=True
+                    )
                     target_branch = result.stdout.strip()
                 except (subprocess.CalledProcessError, FileNotFoundError):
                     target_branch = "main"  # Fallback if git command fails
@@ -164,7 +166,9 @@ class IssueProcessor:
             },
         )
 
-    def _changeset_to_github_pr(self, repo: str, changeset: ChangeSet, issue_number: int, base_branch: str = "main") -> str:
+    def _changeset_to_github_pr(
+        self, repo: str, changeset: ChangeSet, issue_number: int, base_branch: str = "main"
+    ) -> str:
         """Convert a ChangeSet to a GitHub pull request and return the PR URL."""
         from .models import CodeChange, PullRequest
 
