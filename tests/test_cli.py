@@ -56,8 +56,14 @@ class TestCLI:
         assert result.exit_code != 0
 
     @patch("sip.cli.IssueProcessor")
-    def test_cli_successful_processing(self, mock_processor_class: Any) -> None:
+    @patch("subprocess.run")
+    def test_cli_successful_processing(self, mock_subprocess_run: Any, mock_processor_class: Any) -> None:
         """Test CLI with successful issue processing."""
+        # Mock the git command to return a predictable branch name
+        mock_subprocess_result = Mock()
+        mock_subprocess_result.stdout = "test-branch"
+        mock_subprocess_run.return_value = mock_subprocess_result
+
         # Mock the processor
         mock_processor = Mock()
         mock_processor_class.return_value = mock_processor
@@ -81,8 +87,8 @@ class TestCLI:
 
             assert result.exit_code == 0
             assert "✅ Successfully processed issue #1" in result.output
-            # The CLI now passes the branch parameter (defaults to current git branch)
-            mock_processor.process_issue.assert_called_once_with("test/repo", 1, "use-stable-source-for-ci")
+            # The CLI now passes the branch parameter (mocked to return "test-branch")
+            mock_processor.process_issue.assert_called_once_with("test/repo", 1, "test-branch")
 
     @patch("sip.cli.IssueProcessor")
     def test_cli_failed_processing(self, mock_processor_class: Any) -> None:
