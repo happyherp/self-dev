@@ -1,0 +1,59 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        
+        {
+            "name": "Python: Current File",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "python": "./.venv/bin/python",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/src"
+            }
+        },
+        {
+            "name": "SIP: Process Issue",
+            "type": "python",
+            "request": "launch",
+            "module": "sip.cli",
+            "args": ["process-issue", "1"],
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "python": "./.venv/bin/python",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/src"
+            },
+            "envFile": "${workspaceFolder}/.env"
+        },
+        {
+            "name": "SIP: Process Local",
+            "type": "python",
+            "request": "launch",
+            "module": "sip.cli",
+            "args": ["process-local", "goal.md", "."],
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "python": "./.venv/bin/python",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/src"
+            },
+            "envFile": "${workspaceFolder}/.env"
+        },
+        {
+            "name": "Python: Pytest",
+            "type": "python",
+            "request": "launch",
+            "module": "pytest",
+            "args": ["tests/", "-v"],
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "python": "./.venv/bin/python",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/src"
+            }
+        }
+    ]
+}
