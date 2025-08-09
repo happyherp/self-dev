@@ -1,0 +1,46 @@
+{
+  "python.defaultInterpreterPath": "./.venv/bin/python",
+  "python.terminal.activateEnvironment": true,
+  "python.analysis.extraPaths": ["./src"],
+  "python.analysis.autoSearchPaths": false,
+  "python.analysis.typeCheckingMode": "strict",
+  
+  "mypy-type-checker.interpreter": ["./.venv/bin/python"],
+  "mypy-type-checker.path": ["./.venv/bin/mypy"],
+  "mypy-type-checker.args": [
+    "--config-file=pyproject.toml",
+    "src/"
+  ],
+  "mypy-type-checker.importStrategy": "fromEnvironment",
+  "mypy-type-checker.showNotifications": "onError",
+  "mypy-type-checker.severity": {
+    "error": "Error",
+    "note": "Information"
+  },
+  
+  "python.linting.enabled": false,
+  "python.linting.pylintEnabled": false,
+  "python.linting.flake8Enabled": false,
+  
+  "ruff.interpreter": ["./.venv/bin/python"],
+  "ruff.path": ["./.venv/bin/ruff"],
+  "ruff.lint.args": ["--config=pyproject.toml"],
+  "ruff.format.args": ["--config=pyproject.toml"],
+  
+  "python.testing.pytestEnabled": true,
+  "python.testing.pytestPath": "./.venv/bin/pytest",
+  "python.testing.pytestArgs": [
+    "tests/"
+  ],
+  
+  "files.exclude": {
+    "**/__pycache__": true,
+    "**/*.pyc": true,
+    ".mypy_cache": true,
+    ".pytest_cache": true,
+    ".ruff_cache": true,
+    "*.egg-info": true
+  },
+  
+  "python.envFile": "${workspaceFolder}/.env"
+}
