@@ -62,6 +62,21 @@ class GitHubClient:
         github_issue = self.get_github_issue(repo, issue_number)
         return self.issue_from_github_issue(github_issue, repo)
 
+    def create_comment(self, repo: str, issue_number: int, body: str) -> None:
+        """Create a comment on a GitHub issue.
+        
+        Args:
+            repo: Repository name in format "owner/repo"
+            issue_number: Issue number to comment on
+            body: Comment text
+        """
+        try:
+            github_issue = self.get_github_issue(repo, issue_number)
+            github_issue.create_comment(body)
+        except Exception as e:
+            # Log the error but don't fail the entire operation
+            print(f"Warning: Failed to create comment on issue #{issue_number}: {e}")
+
     def get_file_content(self, repo: str, path: str, ref: str = "main") -> str:
         """Get file content from repository."""
         try:

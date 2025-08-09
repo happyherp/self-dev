@@ -60,6 +60,13 @@ class TestConfigIntegration:
             assert config.llm_model == "test/model"
             assert config.max_retry_attempts == 3
 
+    def test_config_start_work_comment_template(self):
+        """Test config has start work comment template."""
+        config = Config(github_token="test", openrouter_api_key="test")
+        assert hasattr(config, "start_work_comment_template")
+        assert "SIP" in config.start_work_comment_template
+        assert "started working" in config.start_work_comment_template
+
 
 class TestGitHubClientIntegration:
     """Test GitHub client integration."""
@@ -104,6 +111,20 @@ class TestGitHubClientIntegration:
         assert issue.author == "test_user"
         assert issue.labels == ["bug"]
         assert issue.state == "open"
+
+    def test_github_client_create_comment(self):
+        """Test GitHub client can create comments."""
+        config = Config(github_token="test", openrouter_api_key="test")
+        client = GitHubClient(config)
+
+        # Mock the issue
+        mock_issue = Mock()
+        mock_issue.create_comment = Mock()
+
+        with patch.object(client, "get_github_issue", return_value=mock_issue):
+            client.create_comment("test/repo", 1, "Test comment")
+
+        mock_issue.create_comment.assert_called_once_with("Test comment")
 
 
 class TestLLMClientIntegration:
@@ -195,6 +216,35 @@ class TestIssueProcessorIntegration:
         assert isinstance(processor.llm, LLMClient)
         # Test runner is now part of the core CodeEditor
         assert hasattr(processor, "code_editor")
+
+    def test_issue_processor_creates_start_comment(self):
+        """Test issue processor creates a start comment."""
+        config = Config(github_token="test_token", openrouter_api_key="test_key")
+        processor = IssueProcessor(config)
+
+        # Mock the GitHub client
+        mock_issue = create_test_issue()
+        with (
+            patch.object(processor.github, "get_issue", return_value=mock_issue),
+            patch.object(processor.github, "create_comment") as mock_create_comment,
+            patch.object(processor, "_fetch_github_repo", return_value={}),
+            patch.object(processor.code_editor, "process_goal") as mock_process_goal,
+            patch.object(processor, "_changeset_to_github_pr", return_value="http://test.pr"),
+        ):
+            # Mock the changeset
+            from sip.core import ChangeSet
+
+            mock_changeset = ChangeSet(summary="Test", description="Test", files=[])
+            mock_process_goal.return_value = mock_changeset
+
+            processor.process_issue("test/repo", 1, "main")
+
+            # Verify that create_comment was called
+            mock_create_comment.assert_called_once()
+            args = mock_create_comment.call_args[0]
+            assert args[0] == "test/repo"
+            assert args[1] == 1
+            assert "SIP" in args[2]  # Comment should contain SIP
 
 
 class TestEndToEndIntegration:
