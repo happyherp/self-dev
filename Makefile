@@ -226,6 +226,8 @@ setup_for-openhands: ## complete OpenHands development environment setup (called
 	@uv sync --extra test
 	@echo "🔧 Installing pre-commit hooks..."
 	@$(MAKE) install-pre-commit-hooks
+	@echo "📝 Generating OpenHands repository documentation..."
+	@$(MAKE) generate-openhands-repo
 	@echo "🎉 OpenHands development environment setup complete!"
 
 generate-openhands-repo: ## generate .openhands/repo.md from source files
