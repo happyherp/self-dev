@@ -60,23 +60,32 @@ class IssueProcessor:
 
             # 1. Fetch GitHub issue and convert to Goal
             github_issue = self.github.get_issue(repo, issue_number)
+            
+            # 2. Create start comment immediately after fetching the issue
+            comment_body = self.config.start_work_comment_template.format(
+                issue_number=issue_number,
+                issue_title=github_issue.title
+            )
+            self.github.create_comment(repo, issue_number, comment_body)
+            self.logger.info(f"Posted start comment on issue #{issue_number}")
+            
             goal = self._issue_to_goal(github_issue)
             self.logger.info(f"Converted issue to goal: {goal.description[:100]}...")
 
-            # 2. Fetch GitHub repository and convert to Repo
+            # 3. Fetch GitHub repository and convert to Repo
             github_repo = self._fetch_github_repo(repo, branch)
             core_repo = self._github_to_repo(repo, github_repo)
             self.logger.info(f"Loaded repository with {len(core_repo.files)} files")
 
-            # 3. Core processing (platform-agnostic)
+            # 4. Core processing (platform-agnostic)
             changeset = self.code_editor.process_goal(goal, core_repo)
             self.logger.info(f"Generated changeset with {len(changeset.files)} file changes")
 
-            # 4. Convert changeset to GitHub PR
+            # 5. Convert changeset to GitHub PR
             pr_url = self._changeset_to_github_pr(repo, changeset, issue_number, branch)
             self.logger.info(f"Created GitHub PR: {pr_url}")
 
-            # 5. Convert back to GitHub-specific result format
+            # 6. Convert back to GitHub-specific result format
             # Create a PullRequest object for compatibility
             from .models import CodeChange, PullRequest
 
