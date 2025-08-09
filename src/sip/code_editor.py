@@ -12,6 +12,7 @@ It has no knowledge of GitHub, issues, PRs, or any platform-specific concepts.
 
 import json
 import logging
+import shutil
 import tempfile
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -49,6 +50,12 @@ class CodeEditor:
         self.test_runner = test_runner or SipTestRunner()
         self.max_retry_attempts = max_retry_attempts
         self.logger = logging.getLogger(__name__)
+
+        # Persistent temporary directory state
+        self._temp_dir: Path | None = None
+        self._current_repo_state: dict[str, str] = {}
+        self._is_temp_dir_initialized: bool = False
+        self._current_repo_name: str = ""
 
     def process_goal(self, goal: "Goal", repo: "Repo") -> "ChangeSet":
         """
@@ -136,24 +143,7 @@ class CodeEditor:
         # Format repository context for analysis
         repo_context = self._format_repo_context(repo)
 
-        # Check if LLM client has direct goal support
-        if hasattr(self.llm_client, "analyze_goal"):
-            analysis = self.llm_client.analyze_goal(goal, repo_context)
-        else:
-            # Convert Goal to GitHubIssue format for legacy LLM clients
-            from .models import GitHubIssue
-
-            mock_issue = GitHubIssue(
-                number=0,
-                title=goal.description.split("\n")[0][:100],
-                body=goal.description,
-                author="system",
-                labels=goal.tags,
-                state="open",
-                html_url="",
-                repository=repo.metadata.get("repository", "unknown/repo"),
-            )
-            analysis = self.llm_client.analyze_issue(mock_issue, repo_context)
+        analysis = self.llm_client.analyze_goal(goal, repo_context)
 
         # Convert to core analysis result if needed
         if hasattr(analysis, "model_dump"):
@@ -175,27 +165,7 @@ class CodeEditor:
         # Get relevant file contents
         file_contents = self._get_relevant_files(repo, analysis.files_to_modify)
 
-        # Try the new Goal-based interface first, fall back to legacy GitHubIssue interface
-        try:
-            # New interface: generate_solution(goal, analysis, file_contents, ...)
-            changeset = self.llm_client.generate_solution(goal, analysis, file_contents, previous_attempt, last_error)
-        except (TypeError, AttributeError):
-            # Legacy interface: generate_solution(issue, analysis, file_contents, ...)
-            from .models import GitHubIssue
-
-            mock_issue = GitHubIssue(
-                number=0,
-                title=goal.description.split("\n")[0][:100],
-                body=goal.description,
-                author="system",
-                labels=goal.tags,
-                state="open",
-                html_url="",
-                repository=repo.metadata.get("repository", "unknown/repo"),
-            )
-            changeset = self.llm_client.generate_solution(
-                mock_issue, analysis, file_contents, previous_attempt, last_error
-            )
+        changeset = self.llm_client.generate_solution(goal, analysis, file_contents, previous_attempt, last_error)
 
         # Convert to core changeset if needed
         if hasattr(changeset, "model_dump"):
@@ -229,31 +199,24 @@ class CodeEditor:
             return changeset  # type: ignore[no-any-return]
 
     def _test_changes_in_temp_repo(self, repo: "Repo", changeset: "ChangeSet") -> SipTestResult:
-        """Test the changes in a temporary repository."""
-        with tempfile.TemporaryDirectory() as temp_dir:
-            try:
-                # Create the repository structure
-                for file_path, content in repo.files.items():
-                    full_path = Path(temp_dir) / file_path
-                    full_path.parent.mkdir(parents=True, exist_ok=True)
-                    full_path.write_text(content)
+        """Test the changes in the persistent temporary repository."""
+        try:
+            # Ensure temporary directory is ready and synchronized
+            self._ensure_temp_dir_ready(repo)
 
-                # Apply the changes
-                for file_change in changeset.files:
-                    full_path = Path(temp_dir) / file_change.path
-                    full_path.parent.mkdir(parents=True, exist_ok=True)
-                    full_path.write_text(file_change.content)
+            # Apply the changes to the persistent temporary directory
+            self._update_temp_dir(changeset)
 
-                # Run tests
-                return self.test_runner.run_tests(cwd=temp_dir)
+            # Run tests in the persistent temporary directory
+            return self.test_runner.run_tests(cwd=str(self._temp_dir))
 
-            except Exception as e:
-                return SipTestResult(
-                    success=False,
-                    output="",
-                    error_output=f"Error setting up test environment: {e}",
-                    return_code=-1,
-                )
+        except Exception as e:
+            return SipTestResult(
+                success=False,
+                output="",
+                error_output=f"Error setting up test environment: {e}",
+                return_code=-1,
+            )
 
     def _format_repo_context(self, repo: "Repo") -> str:
         """Format repository information for LLM consumption."""
@@ -312,6 +275,120 @@ class CodeEditor:
             attempt_info[f"content_preview_{file_change.path}"] = content_preview
 
         return json.dumps(attempt_info, indent=2)
+
+    def _initialize_temp_dir(self, repo: "Repo") -> None:
+        """Initialize the persistent temporary directory with repository content."""
+        try:
+            # Create temporary directory
+            self._temp_dir = Path(tempfile.mkdtemp(prefix="sip_code_editor_"))
+            self.logger.debug(f"Created temporary directory: {self._temp_dir}")
+
+            # Copy repository files to temp directory
+            for file_path, content in repo.files.items():
+                full_path = self._temp_dir / file_path
+                full_path.parent.mkdir(parents=True, exist_ok=True)
+                full_path.write_text(content)
+
+            # Update state tracking
+            self._current_repo_state = repo.files.copy()
+            self._current_repo_name = repo.name
+            self._is_temp_dir_initialized = True
+
+            self.logger.info(f"Initialized temporary directory with {len(repo.files)} files")
+
+        except Exception as e:
+            self.logger.error(f"Failed to initialize temporary directory: {e}")
+            self._cleanup_temp_dir()
+            raise
+
+    def _ensure_temp_dir_ready(self, repo: "Repo") -> None:
+        """Ensure the temporary directory exists and is synchronized with the repository."""
+        # Check if we need to initialize or reinitialize
+        needs_init = (
+            not self._is_temp_dir_initialized
+            or self._temp_dir is None
+            or not self._temp_dir.exists()
+            or self._current_repo_name != repo.name
+        )
+
+        if needs_init:
+            self._cleanup_temp_dir()
+            self._initialize_temp_dir(repo)
+            return
+
+        # Synchronize any changes in repository state
+        self._sync_repo_changes(repo)
+
+    def _sync_repo_changes(self, repo: "Repo") -> None:
+        """Synchronize repository changes to the temporary directory."""
+        if not self._temp_dir or not self._temp_dir.exists():
+            raise RuntimeError("Temporary directory not initialized")
+
+        changes_made = 0
+
+        # Update or create files that have changed
+        for file_path, content in repo.files.items():
+            if file_path not in self._current_repo_state or self._current_repo_state[file_path] != content:
+                full_path = self._temp_dir / file_path
+                full_path.parent.mkdir(parents=True, exist_ok=True)
+                full_path.write_text(content)
+                changes_made += 1
+
+        # Remove files that no longer exist in the repository
+        for file_path in self._current_repo_state:
+            if file_path not in repo.files:
+                full_path = self._temp_dir / file_path
+                if full_path.exists():
+                    full_path.unlink()
+                    changes_made += 1
+
+        # Update state tracking
+        self._current_repo_state = repo.files.copy()
+
+        if changes_made > 0:
+            self.logger.debug(f"Synchronized {changes_made} file changes to temporary directory")
+
+    def _update_temp_dir(self, changeset: "ChangeSet") -> None:
+        """Apply changeset to the persistent temporary directory."""
+        if not self._temp_dir or not self._temp_dir.exists():
+            raise RuntimeError("Temporary directory not initialized")
+
+        changes_applied = 0
+
+        for file_change in changeset.files:
+            full_path = self._temp_dir / file_change.path
+            full_path.parent.mkdir(parents=True, exist_ok=True)
+
+            # Only write if content has actually changed
+            current_content = ""
+            if full_path.exists():
+                current_content = full_path.read_text()
+
+            if current_content != file_change.content:
+                full_path.write_text(file_change.content)
+                changes_applied += 1
+
+        if changes_applied > 0:
+            self.logger.debug(f"Applied {changes_applied} changes to temporary directory")
+
+    def _cleanup_temp_dir(self) -> None:
+        """Clean up the persistent temporary directory."""
+        if self._temp_dir and self._temp_dir.exists():
+            try:
+                shutil.rmtree(self._temp_dir)
+                self.logger.debug(f"Cleaned up temporary directory: {self._temp_dir}")
+            except Exception as e:
+                self.logger.warning(f"Failed to clean up temporary directory {self._temp_dir}: {e}")
+
+        # Reset state
+        self._temp_dir = None
+        self._current_repo_state = {}
+        self._is_temp_dir_initialized = False
+        self._current_repo_name = ""
+
+    def __del__(self) -> None:
+        """Cleanup temporary directory when the CodeEditor instance is destroyed."""
+        self._cleanup_temp_dir()
 
 
 class TestFailureError(Exception):
