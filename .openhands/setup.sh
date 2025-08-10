@@ -4,6 +4,9 @@
 
 set -e  # Exit on any error
 
+# Fix virtual environment path for uv in OpenHands environment
+export VIRTUAL_ENV="$(pwd)/.venv"
+
 # Check if we're in the right directory
 if [[ ! -f "pyproject.toml" ]] || [[ ! -f "Makefile" ]]; then
     echo "❌ Error: This script must be run from the SIP project root directory"
