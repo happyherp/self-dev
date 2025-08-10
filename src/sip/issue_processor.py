@@ -60,15 +60,14 @@ class IssueProcessor:
 
             # 1. Fetch GitHub issue and convert to Goal
             github_issue = self.github.get_issue(repo, issue_number)
-            
+
             # 2. Create start comment immediately after fetching the issue
             comment_body = self.config.start_work_comment_template.format(
-                issue_number=issue_number,
-                issue_title=github_issue.title
+                issue_number=issue_number, issue_title=github_issue.title
             )
             self.github.create_comment(repo, issue_number, comment_body)
             self.logger.info(f"Posted start comment on issue #{issue_number}")
-            
+
             goal = self._issue_to_goal(github_issue)
             self.logger.info(f"Converted issue to goal: {goal.description[:100]}...")
 

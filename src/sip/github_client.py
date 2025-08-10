@@ -64,7 +64,7 @@ class GitHubClient:
 
     def create_comment(self, repo: str, issue_number: int, body: str) -> None:
         """Create a comment on a GitHub issue.
-        
+
         Args:
             repo: Repository name in format "owner/repo"
             issue_number: Issue number to comment on
