@@ -15,6 +15,11 @@ class Config:
     max_file_size: int = 100000  # 100KB
     max_files_per_pr: int = 10
     max_retry_attempts: int = 5
+    start_work_comment_template: str = (
+        "🤖 **SIP (Self-Improving Program) has started working on this issue!**\n\n"
+        "I'm analyzing the requirements and will create a pull request with the solution soon. "
+        "You can track the progress here."
+    )
 
     @classmethod
     def from_env(cls) -> "Config":
@@ -38,4 +43,7 @@ class Config:
             max_file_size=int(os.getenv("MAX_FILE_SIZE", str(fields["max_file_size"].default))),
             max_files_per_pr=int(os.getenv("MAX_FILES_PER_PR", str(fields["max_files_per_pr"].default))),
             max_retry_attempts=int(os.getenv("MAX_RETRY_ATTEMPTS", str(fields["max_retry_attempts"].default))),
+            start_work_comment_template=os.getenv(
+                "START_WORK_COMMENT_TEMPLATE", str(fields["start_work_comment_template"].default)
+            ),
         )
