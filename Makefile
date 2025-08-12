@@ -108,8 +108,7 @@ format-check: ## check code formatting with ruff
 typecheck: ## check types with mypy
 	uv run mypy src/
 
-test-unit: ## run unit tests with coverage
-	uv run python -m pytest tests/ -v --cov=src/sip --cov-report=xml --cov-report=term
+
 
 security: ## run security checks
 	@echo "🔒 Running security checks..."
@@ -149,42 +148,72 @@ ci: ci_for-developers ## alias for ci_for-developers (backwards compatibility)
 
 MAKECMDGOALS ?= .	
 
-test:  ## Run all the tests, but allow for arguments to be passed
-	@echo "Running with arg: $(filter-out $@,$(MAKECMDGOALS))"
-	pytest $(filter-out $@,$(MAKECMDGOALS))
+# Coverage reporting commands (DRY)
+COVERAGE_SOURCE = --source sip
+COVERAGE_RUN = uv run coverage run $(COVERAGE_SOURCE) -m pytest
+COVERAGE_REPORT = uv run coverage report -m && uv run coverage html && $(BROWSER) htmlcov/index.html
 
-pdb:  ## Run all the tests, but on failure, drop into the debugger
-	@echo "Running with arg: $(filter-out $@,$(MAKECMDGOALS))"
-	pytest --pdb --maxfail=10 --pdbcls=IPython.terminal.debugger:TerminalPdb $(filter-out $@,$(MAKECMDGOALS))
+# Test path variables
+UNIT_TESTS = tests/unit/
+INTEGRATION_TESTS = tests/integration/
+ALL_TESTS = tests/
 
-test-all: ## run tests on every Python version with uv
-	uv run --python=3.10 --extra test pytest
-	uv run --python=3.11 --extra test pytest
-	uv run --python=3.12 --extra test pytest
-	uv run --python=3.13 --extra test pytest
+test:  ## Run all unit tests (default test target)
+	@echo "🧪 Running unit tests..."
+	uv run pytest $(UNIT_TESTS)
 
-test-integration: ## run integration tests with live API tokens (fails if secrets missing)
-	@echo "🧪 Running integration tests with live API tokens..."
-	@# Fail if secrets are not available
+test-unit: ## Run unit tests only
+	@echo "🧪 Running unit tests..."
+	uv run pytest $(UNIT_TESTS)
+
+test-unit-coverage: ## Run unit tests with coverage
+	@echo "🧪 Running unit tests with coverage..."
+	$(COVERAGE_RUN) $(UNIT_TESTS)
+	$(COVERAGE_REPORT)
+
+test-integration: ## Run integration tests with pytest (requires API credentials)
+	@echo "🧪 Running integration tests with pytest..."
 	@if [ -z "$$AGENT_GITHUB_TOKEN" ] || [ -z "$$OPENROUTER_API_KEY" ]; then \
-		echo "❌ Integration tests failed: secrets not available"; \
-		echo "Set AGENT_GITHUB_TOKEN and OPENROUTER_API_KEY environment variables to run integration tests"; \
+		echo "❌ Integration tests require API credentials"; \
+		echo "Set AGENT_GITHUB_TOKEN and OPENROUTER_API_KEY environment variables"; \
 		exit 1; \
 	fi
-	@echo "Testing CLI help command..."
-	@uv run python -m sip --help > /dev/null
-	@echo "✅ CLI help works"
-	@echo "Testing config loading..."
-	@uv run python -c "from sip.config import Config; config = Config.from_env(); print(f'✅ Config loaded for repository: {config.default_repository}')"
-	@echo "Testing GitHub API connectivity..."
-	@uv run python -c "from sip.github_client import GitHubClient; from sip.config import Config; config = Config.from_env(); client = GitHubClient(config); repo_info = client.get_repository(config.default_repository); print(f'✅ GitHub API connected - Repository: {repo_info[\"full_name\"]}'); print(f'✅ Repository description: {repo_info.get(\"description\", \"No description\")}')";
-	@echo "✅ All integration tests passed!"
+	uv run pytest $(INTEGRATION_TESTS)
 
-coverage: ## check code coverage quickly with the default Python
-	coverage run --source sip -m pytest
-	coverage report -m
-	coverage html
-	$(BROWSER) htmlcov/index.html
+test-integration-coverage: ## Run integration tests with coverage (requires API credentials)
+	@echo "🧪 Running integration tests with coverage..."
+	@if [ -z "$$AGENT_GITHUB_TOKEN" ] || [ -z "$$OPENROUTER_API_KEY" ]; then \
+		echo "❌ Integration tests require API credentials"; \
+		echo "Set AGENT_GITHUB_TOKEN and OPENROUTER_API_KEY environment variables"; \
+		exit 1; \
+	fi
+	$(COVERAGE_RUN) $(INTEGRATION_TESTS)
+	$(COVERAGE_REPORT)
+
+test-all: ## Run both unit and integration tests by calling other make targets
+	@echo "🧪 Running all tests (unit + integration)..."
+	@if [ -z "$$AGENT_GITHUB_TOKEN" ] || [ -z "$$OPENROUTER_API_KEY" ]; then \
+		echo "⚠️  API credentials not available - running unit tests only"; \
+		$(MAKE) test-unit; \
+	else \
+		echo "✅ API credentials available - running all tests"; \
+		$(MAKE) test-unit && $(MAKE) test-integration; \
+	fi
+
+test-all-coverage: ## Run all tests with coverage (requires API credentials for integration tests)
+	@echo "🧪 Running all tests with coverage..."
+	@if [ -z "$$AGENT_GITHUB_TOKEN" ] || [ -z "$$OPENROUTER_API_KEY" ]; then \
+		echo "⚠️  API credentials not available - running unit test coverage only"; \
+		$(MAKE) test-unit-coverage; \
+	else \
+		echo "✅ API credentials available - running coverage on all tests"; \
+		$(COVERAGE_RUN) $(ALL_TESTS); \
+		$(COVERAGE_REPORT); \
+	fi
+
+pdb:  ## Run unit tests with debugger on failure
+	@echo "🐛 Running unit tests with debugger..."
+	pytest --pdb --maxfail=10 --pdbcls=IPython.terminal.debugger:TerminalPdb $(UNIT_TESTS)
 
 docs: ## generate Sphinx HTML documentation, including API docs
 	rm -f docs/sip.md

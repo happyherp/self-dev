@@ -105,6 +105,60 @@ make install-pre-commit-hooks
 make run-pre-commit-checks
 ```
 
+## Testing
+
+SIP has a comprehensive test suite organized into two categories:
+
+### Unit Tests
+Fast, isolated tests that mock external dependencies:
+```bash
+# Run unit tests (default)
+make test
+# or
+make test-unit
+# or
+pytest tests/unit/
+```
+
+### Integration Tests
+Tests that use real API services (requires credentials):
+```bash
+# Run integration tests (requires API keys)
+make test-integration
+# or
+pytest tests/integration/
+
+# Run all tests (unit + integration)
+make test-all
+```
+
+**Integration Test Requirements:**
+- `AGENT_GITHUB_TOKEN` - GitHub personal access token
+- `OPENROUTER_API_KEY` - OpenRouter API key
+
+Integration tests are designed to be safe:
+- Only perform read operations on existing repositories
+- Create temporary branches/files that are cleaned up automatically
+- Skip tests gracefully when credentials are not available
+
+### Coverage
+```bash
+# Coverage for unit tests only
+make test-unit-coverage
+
+# Coverage for integration tests (requires API credentials)
+make test-integration-coverage
+
+# Coverage for all tests (requires API credentials)
+make test-all-coverage
+```
+
+### Test Organization
+- `tests/unit/` - Unit tests with mocked dependencies
+- `tests/integration/test_github.py` - GitHub API integration tests
+- `tests/integration/test_openrouter.py` - OpenRouter LLM integration tests  
+- `tests/integration/test_end_to_end.py` - Full workflow integration tests
+
 ## Documentation
 
 - [Installation Guide](docs/installation.md)

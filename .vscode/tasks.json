@@ -117,10 +117,71 @@
             ]
         },
         {
-            "label": "pytest: Run Tests",
+            "label": "make: Run Unit Tests",
             "type": "shell",
-            "command": "uv",
-            "args": ["run", "python", "-m", "pytest", "tests/", "-v"],
+            "command": "make",
+            "args": ["test-unit"],
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false
+            },
+            "problemMatcher": [
+                {
+                    "owner": "pytest",
+                    "fileLocation": "absolute",
+                    "pattern": [
+                        {
+                            "regexp": "^(.+?):(\\d+): (.+)$",
+                            "file": 1,
+                            "line": 2,
+                            "message": 3
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "label": "make: Run Integration Tests",
+            "type": "shell",
+            "command": "make",
+            "args": ["test-integration"],
+            "group": "test",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false
+            },
+            "problemMatcher": [
+                {
+                    "owner": "pytest",
+                    "fileLocation": "absolute",
+                    "pattern": [
+                        {
+                            "regexp": "^(.+?):(\\d+): (.+)$",
+                            "file": 1,
+                            "line": 2,
+                            "message": 3
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "label": "make: Run All Tests",
+            "type": "shell",
+            "command": "make",
+            "args": ["test-all"],
             "group": "test",
             "presentation": {
                 "echo": true,

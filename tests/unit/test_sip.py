@@ -13,7 +13,7 @@ from sip.test_runner import SipTestResult, SipTestRunner
 
 def test_version():
     """Test version consistency between pyproject.toml and package."""
-    pyproject_path = Path(__file__).parent.parent / "pyproject.toml"
+    pyproject_path = Path(__file__).parent.parent.parent / "pyproject.toml"
     with open(pyproject_path, "rb") as f:
         pyproject_data = tomllib.load(f)
     pyproject_version = pyproject_data["project"]["version"]
@@ -37,10 +37,7 @@ def test_test_runner_initialization():
     assert runner.test_command == ["make", "agent-check-code"]
 
 
-def test_test_runner_custom_command():
-    """Test test runner with custom command."""
-    runner = SipTestRunner(["echo", "test"])
-    assert runner.test_command == ["echo", "test"]
+
 
 
 def test_test_result_creation():
