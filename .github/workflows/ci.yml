@@ -59,7 +59,7 @@ jobs:
       env:
         AGENT_GITHUB_TOKEN: ${{ secrets.AGENT_GITHUB_TOKEN }}
         OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-      run: make test-integration-pytest
+      run: make test-integration
 
   security:
     runs-on: ubuntu-latest

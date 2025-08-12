@@ -156,14 +156,14 @@ test-unit: ## Run unit tests only
 	@echo "🧪 Running unit tests..."
 	uv run pytest tests/unit/
 
-test-integration-pytest: ## Run integration tests with pytest (requires API credentials)
+test-integration: ## Run integration tests with pytest (requires API credentials)
 	@echo "🧪 Running integration tests with pytest..."
 	@if [ -z "$$AGENT_GITHUB_TOKEN" ] || [ -z "$$OPENROUTER_API_KEY" ]; then \
 		echo "❌ Integration tests require API credentials"; \
 		echo "Set AGENT_GITHUB_TOKEN and OPENROUTER_API_KEY environment variables"; \
 		exit 1; \
 	fi
-	pytest tests/integration/
+	uv run pytest tests/integration/
 
 test-all-pytest: ## Run both unit and integration tests with pytest
 	@echo "🧪 Running all tests (unit + integration)..."
@@ -185,22 +185,7 @@ test-all: ## run unit tests on every Python version with uv
 	uv run --python=3.12 --extra test pytest tests/unit/
 	uv run --python=3.13 --extra test pytest tests/unit/
 
-test-integration: ## run integration tests with live API tokens (fails if secrets missing)
-	@echo "🧪 Running integration tests with live API tokens..."
-	@# Fail if secrets are not available
-	@if [ -z "$$AGENT_GITHUB_TOKEN" ] || [ -z "$$OPENROUTER_API_KEY" ]; then \
-		echo "❌ Integration tests failed: secrets not available"; \
-		echo "Set AGENT_GITHUB_TOKEN and OPENROUTER_API_KEY environment variables to run integration tests"; \
-		exit 1; \
-	fi
-	@echo "Testing CLI help command..."
-	@uv run python -m sip --help > /dev/null
-	@echo "✅ CLI help works"
-	@echo "Testing config loading..."
-	@uv run python -c "from sip.config import Config; config = Config.from_env(); print(f'✅ Config loaded for repository: {config.default_repository}')"
-	@echo "Testing GitHub API connectivity..."
-	@uv run python -c "from sip.github_client import GitHubClient; from sip.config import Config; config = Config.from_env(); client = GitHubClient(config); repo_info = client.get_repository(config.default_repository); print(f'✅ GitHub API connected - Repository: {repo_info[\"full_name\"]}'); print(f'✅ Repository description: {repo_info.get(\"description\", \"No description\")}')";
-	@echo "✅ All integration tests passed!"
+
 
 coverage: ## check code coverage with unit tests
 	coverage run --source sip -m pytest tests/unit/

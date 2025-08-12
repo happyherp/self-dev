@@ -124,7 +124,7 @@ pytest tests/unit/
 Tests that use real API services (requires credentials):
 ```bash
 # Run integration tests (requires API keys)
-make test-integration-pytest
+make test-integration
 # or
 pytest tests/integration/
 
