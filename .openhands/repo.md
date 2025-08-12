@@ -151,10 +151,13 @@ Integration tests are designed to be safe:
 ### Coverage
 ```bash
 # Coverage for unit tests only
-make coverage
+make test-unit-coverage
+
+# Coverage for integration tests (requires API credentials)
+make test-integration-coverage
 
 # Coverage for all tests (requires API credentials)
-make coverage-all
+make test-all-coverage
 ```
 
 ### Test Organization

@@ -156,6 +156,13 @@ test-unit: ## Run unit tests only
 	@echo "🧪 Running unit tests..."
 	uv run pytest tests/unit/
 
+test-unit-coverage: ## Run unit tests with coverage
+	@echo "🧪 Running unit tests with coverage..."
+	uv run coverage run --source sip -m pytest tests/unit/
+	uv run coverage report -m
+	uv run coverage html
+	$(BROWSER) htmlcov/index.html
+
 test-integration: ## Run integration tests with pytest (requires API credentials)
 	@echo "🧪 Running integration tests with pytest..."
 	@if [ -z "$$AGENT_GITHUB_TOKEN" ] || [ -z "$$OPENROUTER_API_KEY" ]; then \
@@ -165,39 +172,44 @@ test-integration: ## Run integration tests with pytest (requires API credentials
 	fi
 	uv run pytest tests/integration/
 
-test-all: ## Run both unit and integration tests with pytest
+test-integration-coverage: ## Run integration tests with coverage (requires API credentials)
+	@echo "🧪 Running integration tests with coverage..."
+	@if [ -z "$$AGENT_GITHUB_TOKEN" ] || [ -z "$$OPENROUTER_API_KEY" ]; then \
+		echo "❌ Integration tests require API credentials"; \
+		echo "Set AGENT_GITHUB_TOKEN and OPENROUTER_API_KEY environment variables"; \
+		exit 1; \
+	fi
+	uv run coverage run --source sip -m pytest tests/integration/
+	uv run coverage report -m
+	uv run coverage html
+	$(BROWSER) htmlcov/index.html
+
+test-all: ## Run both unit and integration tests by calling other make targets
 	@echo "🧪 Running all tests (unit + integration)..."
 	@if [ -z "$$AGENT_GITHUB_TOKEN" ] || [ -z "$$OPENROUTER_API_KEY" ]; then \
 		echo "⚠️  API credentials not available - running unit tests only"; \
-		uv run pytest tests/unit/; \
+		$(MAKE) test-unit; \
 	else \
 		echo "✅ API credentials available - running all tests"; \
-		uv run pytest tests/; \
+		$(MAKE) test-unit && $(MAKE) test-integration; \
+	fi
+
+test-all-coverage: ## Run all tests with coverage (requires API credentials for integration tests)
+	@echo "🧪 Running all tests with coverage..."
+	@if [ -z "$$AGENT_GITHUB_TOKEN" ] || [ -z "$$OPENROUTER_API_KEY" ]; then \
+		echo "⚠️  API credentials not available - running unit test coverage only"; \
+		$(MAKE) test-unit-coverage; \
+	else \
+		echo "✅ API credentials available - running coverage on all tests"; \
+		uv run coverage run --source sip -m pytest tests/; \
+		uv run coverage report -m; \
+		uv run coverage html; \
+		$(BROWSER) htmlcov/index.html; \
 	fi
 
 pdb:  ## Run unit tests with debugger on failure
 	@echo "🐛 Running unit tests with debugger..."
 	pytest --pdb --maxfail=10 --pdbcls=IPython.terminal.debugger:TerminalPdb tests/unit/
-
-
-
-coverage: ## check code coverage with unit tests
-	coverage run --source sip -m pytest tests/unit/
-	coverage report -m
-	coverage html
-	$(BROWSER) htmlcov/index.html
-
-coverage-all: ## check code coverage with all tests (requires API credentials)
-	@if [ -z "$$AGENT_GITHUB_TOKEN" ] || [ -z "$$OPENROUTER_API_KEY" ]; then \
-		echo "⚠️  API credentials not available - running coverage on unit tests only"; \
-		coverage run --source sip -m pytest tests/unit/; \
-	else \
-		echo "✅ API credentials available - running coverage on all tests"; \
-		coverage run --source sip -m pytest tests/; \
-	fi
-	coverage report -m
-	coverage html
-	$(BROWSER) htmlcov/index.html
 
 docs: ## generate Sphinx HTML documentation, including API docs
 	rm -f docs/sip.md
