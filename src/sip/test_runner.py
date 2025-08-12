@@ -17,14 +17,10 @@ class SipTestResult:
 class SipTestRunner:
     """Runs tests and captures output."""
 
-    def __init__(self, test_command: list[str] | None = None) -> None:
-        """Initialize test runner.
-
-        Args:
-            test_command: Command to run tests. Defaults to agent-check-code (for AI agents).
-        """
+    def __init__(self) -> None:
+        """Initialize test runner."""
         # Use agent-check-code which auto-fixes issues then runs CI checks
-        self.test_command = test_command or ["make", "agent-check-code"]
+        self.test_command = ["make", "agent-check-code"]
 
     def run_tests(self, cwd: str | None = None) -> SipTestResult:
         """Run tests and return results.

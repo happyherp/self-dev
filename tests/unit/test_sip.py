@@ -37,10 +37,7 @@ def test_test_runner_initialization():
     assert runner.test_command == ["make", "agent-check-code"]
 
 
-def test_test_runner_custom_command():
-    """Test test runner with custom command."""
-    runner = SipTestRunner(["echo", "test"])
-    assert runner.test_command == ["echo", "test"]
+
 
 
 def test_test_result_creation():
