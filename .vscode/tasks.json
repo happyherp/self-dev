@@ -117,10 +117,10 @@
             ]
         },
         {
-            "label": "pytest: Run Unit Tests",
+            "label": "make: Run Unit Tests",
             "type": "shell",
-            "command": "uv",
-            "args": ["run", "python", "-m", "pytest", "tests/unit/", "-v"],
+            "command": "make",
+            "args": ["test-unit"],
             "group": {
                 "kind": "test",
                 "isDefault": true
@@ -149,10 +149,10 @@
             ]
         },
         {
-            "label": "pytest: Run Integration Tests",
+            "label": "make: Run Integration Tests",
             "type": "shell",
-            "command": "uv",
-            "args": ["run", "python", "-m", "pytest", "tests/integration/", "-v"],
+            "command": "make",
+            "args": ["test-integration"],
             "group": "test",
             "presentation": {
                 "echo": true,
@@ -178,10 +178,10 @@
             ]
         },
         {
-            "label": "pytest: Run All Tests",
+            "label": "make: Run All Tests",
             "type": "shell",
-            "command": "uv",
-            "args": ["run", "python", "-m", "pytest", "tests/", "-v"],
+            "command": "make",
+            "args": ["test-all-pytest"],
             "group": "test",
             "presentation": {
                 "echo": true,
