@@ -129,7 +129,7 @@ make test-integration
 pytest tests/integration/
 
 # Run all tests (unit + integration)
-make test-all-pytest
+make test-all
 ```
 
 **Integration Test Requirements:**

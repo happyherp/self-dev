@@ -181,7 +181,7 @@
             "label": "make: Run All Tests",
             "type": "shell",
             "command": "make",
-            "args": ["test-all-pytest"],
+            "args": ["test-all"],
             "group": "test",
             "presentation": {
                 "echo": true,

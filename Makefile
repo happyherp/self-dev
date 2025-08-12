@@ -165,25 +165,19 @@ test-integration: ## Run integration tests with pytest (requires API credentials
 	fi
 	uv run pytest tests/integration/
 
-test-all-pytest: ## Run both unit and integration tests with pytest
+test-all: ## Run both unit and integration tests with pytest
 	@echo "🧪 Running all tests (unit + integration)..."
 	@if [ -z "$$AGENT_GITHUB_TOKEN" ] || [ -z "$$OPENROUTER_API_KEY" ]; then \
 		echo "⚠️  API credentials not available - running unit tests only"; \
-		pytest tests/unit/; \
+		uv run pytest tests/unit/; \
 	else \
 		echo "✅ API credentials available - running all tests"; \
-		pytest tests/; \
+		uv run pytest tests/; \
 	fi
 
 pdb:  ## Run unit tests with debugger on failure
 	@echo "🐛 Running unit tests with debugger..."
 	pytest --pdb --maxfail=10 --pdbcls=IPython.terminal.debugger:TerminalPdb tests/unit/
-
-test-all: ## run unit tests on every Python version with uv
-	uv run --python=3.10 --extra test pytest tests/unit/
-	uv run --python=3.11 --extra test pytest tests/unit/
-	uv run --python=3.12 --extra test pytest tests/unit/
-	uv run --python=3.13 --extra test pytest tests/unit/
 
 
 
